@@ -2,10 +2,11 @@
 
 ## Current State
 
-Atlas Command currently uses Phaser-generated placeholder art for terrain,
-buildings, props, shadows, labels, and agent markers. The placeholders are meant
-to preserve layout, hit testing, status glows, and interaction while real art is
-created separately.
+Atlas Command currently uses generated building sprites from
+`public/assets/buildings/` for the village buildings. Phaser-generated terrain,
+props, shadows, labels, agent markers, and building fallbacks remain in place to
+preserve layout, hit testing, status glows, and interaction if an image is
+missing, disabled, or fails to load.
 
 ## Target
 
@@ -54,19 +55,26 @@ padding for roof overhangs, signs, chimneys, scaffolding, and baked shadows.
 Export at higher resolution than display size; Phaser scales down from the
 registry dimensions in `lib/game/buildingAssets.ts`.
 
-## Replacing Placeholder Buildings
+## Replacing Or Tuning Buildings
 
 1. Add the sprite file to `public/assets/buildings/`.
 2. Open `lib/game/buildingAssets.ts`.
 3. Find the matching building id.
 4. Confirm `path`, `width`, `height`, `anchor`, `labelOffsetY`, `statusOffsetY`,
    `clickZone`, and `shadow` fit the sprite.
-5. Set `spriteEnabled: true`.
+5. Set `spriteEnabled: true` when the sprite should render in Phaser.
 6. Run `npm run lint` and `npm run build`.
 7. Open `/base` and verify the label, glow, shadow, and click zone.
 
-If a sprite is not enabled, the Phaser scene falls back to the generated
-building silhouette for that id.
+If a sprite is not enabled, missing, or fails to load, the Phaser scene falls
+back to the generated building silhouette for that id.
+
+For placement tuning, adjust registry values first. Use `width` and `height` for
+on-map scale, `anchor` to align the sprite footprint to the path, `labelOffsetY`
+and `statusOffsetY` to keep text clear of roofs, `clickZone` for hit testing,
+and `shadow` for the ground contact ellipse. `components/phaser/VillageScene.ts`
+also has `SHOW_BUILDING_CLICK_ZONES`, which can temporarily draw subtle hit-area
+rectangles during tuning.
 
 ## Registry-Owned Interaction
 

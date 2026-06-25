@@ -47,14 +47,14 @@ npm run build
 - `lib/game/` - asset registries and future game-facing configuration
 - `lib/agents/` - mock Right-Hand Man responses and registry helpers
 - `docs/` - master plan PDF and implementation notes
-- `public/assets/` - future building, terrain, prop, and agent art
+- `public/assets/` - building sprites plus future terrain, prop, and agent art
 - `supabase/` - future schema and seed SQL
 
 ## Current Features
 
 - Village-first game view at `/base`; `/` and `/dashboard` redirect to `/base`
-- Phaser 3 village canvas with clickable asset-ready buildings, organic grass variation, curved paths, trees, fences, rocks, bushes, props, flowers, shadows, and floating labels
-- Building asset registry for future PNG/WebP isometric sprites, with generated fallbacks until art exists
+- Phaser 3 village canvas with clickable generated building sprites, organic grass variation, curved paths, trees, fences, rocks, bushes, props, flowers, shadows, and floating labels
+- Building asset registry for PNG/WebP isometric sprites, with generated fallback buildings kept for missing or disabled art
 - Building status glows for idle, working, waiting approval, blocked, error, and upgrading
 - Floating glass top HUD with cash, revenue, expenses, AI spend, active tasks, approvals, risk alerts, and budget usage
 - Floating bottom dock navigation for Base, Buildings, Agents, Tasks, Approvals, Treasury, Settings, and Docs
@@ -101,7 +101,7 @@ Mock mode remains the default. Leave `NEXT_PUBLIC_DATA_SOURCE` unset or set it t
 
 `docs/Atlas Command Master Plan.pdf` is the canonical product, architecture, safety, and roadmap reference. Future implementation decisions should stay aligned with its guidance on Next.js, Phaser, Treasury, the Right-Hand Man, approval gates, cost controls, Atlas Allocation paper mode, and the cheapest-path roadmap.
 
-`docs/ART_PIPELINE.md` documents the sprite workflow, naming conventions, prompt templates, and how to enable future building art through `lib/game/buildingAssets.ts`.
+`docs/ART_PIPELINE.md` documents the sprite workflow, naming conventions, prompt templates, and how to tune building scale, anchors, labels, shadows, and click zones through `lib/game/buildingAssets.ts`. Future building art should be added under `public/assets/buildings/`.
 
 ## Vercel Deployment Notes
 

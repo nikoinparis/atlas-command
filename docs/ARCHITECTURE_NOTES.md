@@ -68,8 +68,8 @@ Phaser owns:
 - organic grass/ground variation without a visible tile grid
 - paths, trees, rocks, fences, bushes, flowers, shadows, and placeholder scenery
 - building rendering through `lib/game/buildingAssets.ts`
-- future PNG/WebP building sprites loaded from `public/assets/buildings/`
-- generated fallback building silhouettes when sprite assets are not enabled
+- PNG/WebP building sprites loaded from `public/assets/buildings/`
+- generated fallback building silhouettes when sprite assets are not enabled, missing, or fail to load
 - floating building labels
 - status glows
 - hover and click hit testing
@@ -90,4 +90,4 @@ The contract is intentionally small: Phaser calls `onSelectBuilding(buildingId)`
 
 ## Art Pipeline
 
-`docs/ART_PIPELINE.md` defines the sprite workflow, naming conventions, recommended dimensions, prompt templates, licensing cautions, and registry fields for click zones, labels, anchors, and shadows. Finished art should be created outside the app, then integrated by updating `lib/game/buildingAssets.ts`.
+`docs/ART_PIPELINE.md` defines the sprite workflow, naming conventions, recommended dimensions, prompt templates, licensing cautions, and registry fields for click zones, labels, anchors, and shadows. Building art lives in `public/assets/buildings/`, while scale, anchor, label, status, click-zone, and shadow tuning stays centralized in `lib/game/buildingAssets.ts`.

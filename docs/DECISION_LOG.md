@@ -120,6 +120,26 @@ Aligned with Part I and Part II.
 
 ### Decision
 
+Integrate the generated building sprite set into the Phaser village while keeping registry-controlled fallbacks.
+
+### Why
+
+The village should read more like a real 2.5D fantasy management game, but the app still needs to stay resilient if an asset is missing or disabled. Centralizing sprite paths, scale, anchors, labels, click zones, shadows, and fallback styles in `lib/game/buildingAssets.ts` keeps art tuning separate from business UI behavior.
+
+### Alternatives Considered
+
+- Replace the fallback renderer entirely: rejected because missing or failed images should not break the village.
+- Hardcode sprite paths in the Phaser scene: rejected because the registry should remain the single source for building art configuration.
+- Bake labels into the images: rejected because Phaser needs dynamic labels, statuses, selection, and localization-ready text.
+
+### Master Plan Link
+
+Aligned with Part I and Part II.
+
+## 2026-06-25
+
+### Decision
+
 Add Supabase schema, seed SQL, setup docs, env example, and a mock-first data-source abstraction while keeping mock mode as the default.
 
 ### Why

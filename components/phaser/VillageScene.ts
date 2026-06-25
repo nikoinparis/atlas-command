@@ -3,10 +3,12 @@ import { buildingStatusPalette, categoryAccent } from "@/components/phaser/build
 import type { VillageSceneApi, VillageSceneOptions } from "@/components/phaser/gameTypes";
 import {
   getBuildingAsset,
-  getEnabledBuildingAssets,
+  getBuildingAssets,
   type BuildingAssetConfig,
   type BuildingFallbackStyle,
 } from "@/lib/game/buildingAssets";
+
+const SHOW_BUILDING_CLICK_ZONES = false;
 
 type PhaserRuntime = typeof Phaser;
 
@@ -27,6 +29,7 @@ export function createVillageScene(
     private buildingNodes = new Map<string, BuildingNode>();
     private tileGroup?: Phaser.GameObjects.Group;
     private agentGroup?: Phaser.GameObjects.Group;
+    private failedAssetKeys = new Set<string>();
     private isReady = false;
 
     constructor() {
@@ -34,7 +37,13 @@ export function createVillageScene(
     }
 
     preload() {
-      getEnabledBuildingAssets().forEach((asset) => {
+      this.load.on("loaderror", (file: { key?: string | string[] }) => {
+        if (typeof file.key === "string") {
+          this.failedAssetKeys.add(file.key);
+        }
+      });
+
+      getBuildingAssets().forEach((asset) => {
         this.load.image(asset.key, asset.path);
       });
     }
@@ -315,7 +324,7 @@ export function createVillageScene(
           0,
         );
         const art = this.createBuildingArt(asset, accent);
-        const lantern = this.add.circle(asset.width / 2 - 12, asset.labelOffsetY + 22, 5, palette.glow, 0.94);
+        const lantern = this.add.circle(asset.width / 2 - 18, asset.statusOffsetY - 42, 5, palette.glow, 0.94);
         const labelBg = this.add.rectangle(
           0,
           asset.labelOffsetY,
@@ -347,8 +356,9 @@ export function createVillageScene(
           .setOrigin(0.5, 0);
 
         labelBg.setStrokeStyle(1, palette.glow, 0.24);
-        base.setStrokeStyle(2, 0xfff3b0, 0);
-        base.setVisible(false);
+        base.setFillStyle(0x22d3ee, SHOW_BUILDING_CLICK_ZONES ? 0.06 : 0);
+        base.setStrokeStyle(2, 0x22d3ee, SHOW_BUILDING_CLICK_ZONES ? 0.28 : 0);
+        base.setVisible(SHOW_BUILDING_CLICK_ZONES);
         container.add([
           glow,
           shadow,
@@ -397,7 +407,7 @@ export function createVillageScene(
     }
 
     private createBuildingArt(asset: BuildingAssetConfig, accent: number) {
-      if (asset.spriteEnabled && this.textures.exists(asset.key)) {
+      if (asset.spriteEnabled && !this.failedAssetKeys.has(asset.key) && this.textures.exists(asset.key)) {
         const sprite = this.add
           .image(0, 0, asset.key)
           .setDisplaySize(asset.width, asset.height)
@@ -735,8 +745,13 @@ export function createVillageScene(
     private refreshSelection() {
       this.buildingNodes.forEach((node, buildingId) => {
         const selected = buildingId === this.selectedBuildingId;
-        node.base.setVisible(selected);
-        node.base.setStrokeStyle(selected ? 4 : 2, selected ? 0xfff3b0 : 0x301d14, selected ? 0.9 : 0.42);
+        node.base.setVisible(selected || SHOW_BUILDING_CLICK_ZONES);
+        node.base.setFillStyle(0x22d3ee, SHOW_BUILDING_CLICK_ZONES && !selected ? 0.06 : 0);
+        node.base.setStrokeStyle(
+          selected ? 4 : 2,
+          selected ? 0xfff3b0 : 0x22d3ee,
+          selected ? 0.9 : SHOW_BUILDING_CLICK_ZONES ? 0.28 : 0,
+        );
         node.label.setColor(selected ? "#ffffff" : "#fff8d7");
         node.statusText.setColor(selected ? "#fff3b0" : "#e6ddb5");
         node.glow.setAlpha(selected ? 0.44 : 0.16);
