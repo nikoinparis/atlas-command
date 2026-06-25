@@ -8,14 +8,18 @@ import {
   type BuildingFallbackStyle,
 } from "@/lib/game/buildingAssets";
 
-// --- Isometric village grid -------------------------------------------------
-// Buildings, roads, and lots are all placed on one logical grid. gridToWorld() converts a
-// (col, row) cell into world px using a standard 2:1-ish isometric projection, so the town
-// reads as an organized base-builder map instead of scattered sprites.
-const GRID_TILE_HALF_W = 110; // half width of one iso tile (controls horizontal spread)
-const GRID_TILE_HALF_H = 58; // half height of one iso tile (controls vertical spread)
+// --- Village grid -----------------------------------------------------------
+// Buildings, lots, and roads are all placed on one logical grid. gridToWorld() converts a
+// (col, row) cell into world px. We use a flat staggered grid (3 rows, columns offset per row)
+// rather than a full iso diamond: this keeps the three building rows clearly separated, avoids
+// vertical stacking in the centre column, and leaves clean gaps for the road network.
+const GRID_COL_W = 125; // horizontal spacing of one grid column
+const GRID_ROW_H = 134; // vertical spacing between the building rows
 const GRID_ORIGIN_X = 0; // world-space origin offset for the grid
-const GRID_ORIGIN_Y = 18; // nudged down so top-row labels clear the HUD and bottom row clears the dock
+const GRID_ORIGIN_Y = -108; // world y of row 0 (top row); rows fall at -108, 26, 160
+// Road network lives strictly in the gaps between building rows so it never crosses a lot.
+const ROAD_GAP_Y_TOP = -22; // avenue between the top row and the middle row
+const ROAD_GAP_Y_BOTTOM = 112; // avenue between the middle row and the bottom row
 
 // Slight zoom so the composition feels full without cropping buildings or hiding labels.
 const VILLAGE_ZOOM = 1.04;
@@ -252,57 +256,81 @@ export function createVillageScene(
     private drawRoads() {
       const graphics = this.add.graphics();
 
-      // Roads run along the half-integer grid lines, i.e. the borders *between* lots, so they
-      // form a clean isometric lattice and never pass under a building's center. Each entry is
-      // a straight avenue defined by two grid endpoints.
-      const roadLines: { from: [number, number]; to: [number, number] }[] = [
-        // Down-right avenues (constant row).
-        { from: [-2.5, -0.5], to: [1.5, -0.5] },
-        { from: [-2.5, 0.5], to: [2.5, 0.5] },
-        { from: [-0.5, 1.5], to: [2.5, 1.5] },
-        // Down-left avenues (constant col).
-        { from: [-1.5, -1.5], to: [-1.5, 2.5] },
-        { from: [-0.5, -2.5], to: [-0.5, 2.5] },
-        { from: [0.5, -2.5], to: [0.5, 2.5] },
-        { from: [1.5, -1.5], to: [1.5, 1.5] },
-      ];
+      // A straight road segment (world coords) drawn as 3 stacked layers: dark edge, light
+      // surface, warm gravel core.
+      const segment = (ax: number, ay: number, bx: number, by: number, width: number) => {
+        const a = this.toScreen(ax, ay);
+        const b = this.toScreen(bx, by);
+        this.strokeStraight(graphics, a, b, width, 0x6d5934, 0.18);
+        this.strokeStraight(graphics, a, b, Math.max(6, width - 6), 0xefe0ad, 0.78);
+        this.strokeStraight(graphics, a, b, Math.max(4, width - 18), 0xcaa976, 0.42);
+      };
 
-      roadLines.forEach(({ from, to }) => {
-        const a = this.gridToScreen(from[0], from[1]);
-        const b = this.gridToScreen(to[0], to[1]);
-        const line = [a, b];
-        this.strokePath(graphics, line, 46, 0x6d5934, 0.16, 0);
-        this.strokePath(graphics, line, 40, 0xefe0ad, 0.8, 0);
-        this.strokePath(graphics, line, 24, 0xcaa976, 0.4, 0);
+      const left = -360;
+      const right = 360;
+      // Two horizontal avenues, one in each gap between the building rows.
+      segment(left, ROAD_GAP_Y_TOP, right, ROAD_GAP_Y_TOP, 30);
+      segment(left, ROAD_GAP_Y_BOTTOM, right, ROAD_GAP_Y_BOTTOM, 30);
+      // Vertical connectors through the clear gaps between the middle-row buildings.
+      [-228, 0, 228].forEach((vx) =>
+        segment(vx, ROAD_GAP_Y_TOP, vx, ROAD_GAP_Y_BOTTOM, 24),
+      );
+
+      // Central plaza where the connectors meet.
+      const plaza = this.toScreen(0, (ROAD_GAP_Y_TOP + ROAD_GAP_Y_BOTTOM) / 2);
+      this.fillIsoDiamond(graphics, plaza.x, plaza.y, 150, 78, 0x6d5934, 0.22);
+      this.fillIsoDiamond(graphics, plaza.x, plaza.y, 124, 64, 0xefe0ad, 0.5);
+      this.fillIsoDiamond(graphics, plaza.x, plaza.y, 80, 42, 0xcaa976, 0.34);
+
+      // Short entrance path from every lot to its nearest avenue (front of the building).
+      options.buildings.forEach((building) => {
+        const asset = getBuildingAsset(building.id);
+        const world = this.gridToWorld(asset.gridCol, asset.gridRow);
+        const groundY = world.y + (1 - asset.anchor.y) * asset.height;
+        const lotBottom = groundY + asset.lotHeight / 2;
+        const lotTop = groundY - asset.lotHeight / 2;
+        if (asset.gridRow <= 0) {
+          segment(world.x, lotBottom - 4, world.x, ROAD_GAP_Y_TOP, 16);
+        } else if (asset.gridRow < 2) {
+          segment(world.x, lotBottom - 4, world.x, ROAD_GAP_Y_BOTTOM, 16);
+        } else {
+          segment(world.x, lotTop + 4, world.x, ROAD_GAP_Y_BOTTOM, 16);
+        }
       });
-
-      // A paved plaza at the central intersection sells the "town square" read.
-      const center = this.gridToScreen(0, 0);
-      graphics.fillStyle(0x6d5934, 0.2);
-      graphics.fillEllipse(center.x, center.y, GRID_TILE_HALF_W * 1.5, GRID_TILE_HALF_H * 1.5);
-      graphics.fillStyle(0xefe0ad, 0.52);
-      graphics.fillEllipse(center.x, center.y, GRID_TILE_HALF_W * 1.2, GRID_TILE_HALF_H * 1.2);
-      graphics.fillStyle(0xcaa976, 0.34);
-      graphics.fillEllipse(center.x, center.y, GRID_TILE_HALF_W * 0.74, GRID_TILE_HALF_H * 0.74);
 
       this.tileGroup?.add(graphics);
     }
 
     private drawLots() {
-      // Every building gets a visible isometric ground lot/pad drawn under its base. This
-      // (not a drop shadow) is what grounds the building onto the terrain.
+      // Each building gets a compact, softly-blended ground pad under its base. Kept smaller
+      // than the building and faded into the grass so it grounds the building without looking
+      // like a hard floating plate (and no drop shadows are used).
       const graphics = this.add.graphics();
       options.buildings.forEach((building) => {
         const asset = getBuildingAsset(building.id);
         const { x, y } = this.gridToScreen(asset.gridCol, asset.gridRow);
         const groundY = y + (1 - asset.anchor.y) * asset.height; // the building's base line
-        this.fillIsoDiamond(graphics, x, groundY, asset.lotWidth + 16, asset.lotHeight + 8, 0x2f5a32, 0.55);
-        this.fillIsoDiamond(graphics, x, groundY, asset.lotWidth, asset.lotHeight, 0x6f5a3a, 0.92);
-        this.fillIsoDiamond(graphics, x, groundY - 2, asset.lotWidth * 0.78, asset.lotHeight * 0.78, 0x836b44, 0.7);
-        // Thin rim so the lot edge catches a little light and reads as a built pad.
-        this.strokeIsoDiamond(graphics, x, groundY, asset.lotWidth, asset.lotHeight, 0x3a2c1a, 0.5);
+        this.fillIsoDiamond(graphics, x, groundY, asset.lotWidth + 28, asset.lotHeight + 16, 0x335c34, 0.38);
+        this.fillIsoDiamond(graphics, x, groundY, asset.lotWidth + 10, asset.lotHeight + 6, 0x4f6a3d, 0.44);
+        this.fillIsoDiamond(graphics, x, groundY, asset.lotWidth, asset.lotHeight, 0x70603f, 0.72);
+        this.fillIsoDiamond(graphics, x, groundY - 2, asset.lotWidth * 0.72, asset.lotHeight * 0.72, 0x856d45, 0.55);
       });
       this.tileGroup?.add(graphics);
+    }
+
+    private strokeStraight(
+      graphics: Phaser.GameObjects.Graphics,
+      a: { x: number; y: number },
+      b: { x: number; y: number },
+      width: number,
+      color: number,
+      alpha: number,
+    ) {
+      graphics.lineStyle(width, color, alpha);
+      graphics.beginPath();
+      graphics.moveTo(a.x, a.y);
+      graphics.lineTo(b.x, b.y);
+      graphics.strokePath();
     }
 
     private isoDiamondPoints(cx: number, cy: number, width: number, height: number) {
@@ -331,66 +359,24 @@ export function createVillageScene(
       graphics.fillPath();
     }
 
-    private strokeIsoDiamond(
-      graphics: Phaser.GameObjects.Graphics,
-      cx: number,
-      cy: number,
-      width: number,
-      height: number,
-      color: number,
-      alpha: number,
-    ) {
-      const p = this.isoDiamondPoints(cx, cy, width, height);
-      graphics.lineStyle(2, color, alpha);
-      graphics.beginPath();
-      graphics.moveTo(p[0], p[1]);
-      graphics.lineTo(p[2], p[3]);
-      graphics.lineTo(p[4], p[5]);
-      graphics.lineTo(p[6], p[7]);
-      graphics.closePath();
-      graphics.strokePath();
-    }
-
-    private strokePath(
-      graphics: Phaser.GameObjects.Graphics,
-      points: { x: number; y: number }[],
-      width: number,
-      color: number,
-      alpha: number,
-      wobble = 0,
-    ) {
-      graphics.lineStyle(width, color, alpha);
-      graphics.beginPath();
-      graphics.moveTo(points[0].x, points[0].y);
-      points.slice(1).forEach((point, index) => {
-        const previous = points[index];
-        const midpointX = (previous.x + point.x) / 2;
-        const midpointY = (previous.y + point.y) / 2;
-        const offset = (index % 2 === 0 ? wobble : -wobble) + (point.x > previous.x ? 3 : -3);
-
-        graphics.lineTo(midpointX + offset, midpointY - wobble / 2);
-        graphics.lineTo(point.x, point.y);
-      });
-      graphics.strokePath();
-    }
 
     private drawScenery() {
-      // Scenery is kept sparse and pushed to the village perimeter / road edges so it frames
-      // the larger buildings instead of cluttering or overlapping them.
+      // Scenery frames the village around the perimeter and fills the lower foreground; it is
+      // kept clear of the building lots and the road network in the interior.
       const treePositions = [
-        [-400, -30],
-        [-360, 120],
-        [-300, -150],
-        [-200, -185],
-        [-150, 205],
-        [150, 205],
-        [200, -185],
-        [300, -150],
-        [360, 120],
-        [400, -30],
-        [330, 200],
-        [-330, 200],
-        [0, 225],
+        [-440, -60],
+        [-440, 90],
+        [-400, 215],
+        [-300, 255],
+        [-130, 285],
+        [130, 285],
+        [300, 255],
+        [400, 215],
+        [440, 90],
+        [440, -60],
+        [-330, -185],
+        [330, -185],
+        [0, -205],
       ];
 
       treePositions.forEach(([x, y], index) => {
@@ -398,53 +384,45 @@ export function createVillageScene(
       });
 
       [
-        [-160, -50],
-        [160, -50],
+        [-410, 30],
+        [410, 30],
       ].forEach(([x, y]) => this.drawFence(x, y));
 
       [
-        [-300, -30],
-        [300, -30],
-        [-180, 170],
-        [180, 170],
-        [0, 150],
+        [-390, 150],
+        [390, 150],
+        [-175, -168],
+        [175, -168],
+        [0, 235],
       ].forEach(([x, y]) => this.drawRock(x, y));
 
       [
-        [-110, -20],
-        [110, -20],
-        [0, 42],
-        [-60, 40],
-        [60, 40],
-        [-275, 30],
-        [275, 30],
-        [-160, 40],
-        [160, 40],
+        [-128, -72],
+        [128, -72],
+        [-265, 60],
+        [265, 60],
+        [-150, 218],
+        [150, 218],
       ].forEach(([x, y], index) => this.drawBush(x, y, index % 4));
 
       [
-        [-70, -10],
-        [70, -10],
-        [-30, 30],
-        [30, 30],
-        [-150, 108],
-        [150, 108],
+        [-58, 70],
+        [58, 70],
+        [-30, 88],
+        [30, 88],
       ].forEach(([x, y], index) => this.drawFlowerClump(x, y, index));
 
       [
-        [-58, 8],
-        [58, 8],
-        [-150, -30],
-        [150, -30],
+        [-92, 40],
+        [92, 40],
       ].forEach(([x, y]) => this.drawLanternPost(x, y));
 
       [
-        [160, 60],
-        [-285, 92],
-        [300, 96],
+        [-60, 100],
+        [60, 100],
       ].forEach(([x, y], index) => this.drawCrateStack(x, y, index));
 
-      this.drawWell(60, 150);
+      this.drawWell(0, 215);
     }
 
     private drawBuildings() {
@@ -889,14 +867,14 @@ export function createVillageScene(
     }
 
     private drawAgents() {
-      // Agent markers wander the roads/plaza between the lots.
+      // Agent markers wander the road network and plaza between the lots.
       const agentMarkers = [
-        { x: -55, y: -30, color: 0x22d3ee },
-        { x: 58, y: 8, color: 0x34d399 },
-        { x: -170, y: 36, color: 0xfbbf24 },
-        { x: 170, y: 36, color: 0xa78bfa },
-        { x: 0, y: 150, color: 0xfb7185 },
-        { x: -250, y: 110, color: 0xe6ddb5 },
+        { x: -150, y: -22, color: 0x22d3ee },
+        { x: 150, y: -22, color: 0x34d399 },
+        { x: 0, y: 45, color: 0xfbbf24 },
+        { x: -228, y: 66, color: 0xa78bfa },
+        { x: 228, y: 66, color: 0xfb7185 },
+        { x: 0, y: 112, color: 0xe6ddb5 },
       ];
 
       agentMarkers.forEach((marker, index) => {
@@ -1079,12 +1057,11 @@ export function createVillageScene(
       };
     }
 
-    // Isometric grid cell -> world px. Fractional col/row are allowed so roads can run along
-    // the lines between lots.
+    // Grid cell -> world px. Fractional col is allowed so rows can be staggered.
     private gridToWorld(col: number, row: number) {
       return {
-        x: GRID_ORIGIN_X + (col - row) * GRID_TILE_HALF_W,
-        y: GRID_ORIGIN_Y + (col + row) * GRID_TILE_HALF_H,
+        x: GRID_ORIGIN_X + col * GRID_COL_W,
+        y: GRID_ORIGIN_Y + row * GRID_ROW_H,
       };
     }
 
