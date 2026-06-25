@@ -1,0 +1,60 @@
+import type { EventLogItem } from "@/lib/types/atlas";
+
+export const events: EventLogItem[] = [
+  {
+    id: "event-001",
+    timestamp: "01:25",
+    buildingId: "allocation-tower",
+    agentId: "allocator",
+    message: "Allocator started a paper ETF allocation review.",
+    riskLevel: "critical",
+  },
+  {
+    id: "event-002",
+    timestamp: "01:22",
+    buildingId: "research-library",
+    agentId: "quill",
+    message: "Quill queued research note cleanup from Content Studio.",
+    riskLevel: "low",
+  },
+  {
+    id: "event-003",
+    timestamp: "01:19",
+    buildingId: "freelance-guild",
+    agentId: "forge",
+    message: "Forge drafted a freelance dashboard proposal.",
+    riskLevel: "high",
+  },
+  {
+    id: "event-004",
+    timestamp: "01:11",
+    buildingId: "approval-court",
+    agentId: "sentinel",
+    message: "Approval Court has 5 pending items.",
+    riskLevel: "critical",
+  },
+  {
+    id: "event-005",
+    timestamp: "01:10",
+    buildingId: "content-studio",
+    agentId: "nova",
+    message: "Nova drafted 5 content hooks.",
+    riskLevel: "medium",
+  },
+  {
+    id: "event-006",
+    timestamp: "00:58",
+    buildingId: "treasury",
+    agentId: "ledger",
+    message: "Treasury logged $0.04 AI cost from a mock drafting run.",
+    riskLevel: "low",
+  },
+  {
+    id: "event-007",
+    timestamp: "00:45",
+    buildingId: "product-workshop",
+    agentId: "vera",
+    message: "Product Workshop found 3 product ideas.",
+    riskLevel: "medium",
+  },
+];
