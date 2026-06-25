@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils/cn";
 
 interface VillageCanvasProps {
   buildings: Building[];
-  selectedBuildingId: string;
+  selectedBuildingId: string | null;
   onSelectBuilding: (buildingId: string) => void;
   className?: string;
   variant?: "framed" | "immersive";

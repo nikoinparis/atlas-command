@@ -100,6 +100,26 @@ Aligned with Part I and Part II.
 
 ### Decision
 
+Make `/base` the canonical village route, start the shell without auto-open details, and add an asset-ready building renderer.
+
+### Why
+
+Dashboard and Base were redundant, and the details panel opening immediately made the first village view feel crowded. The master plan also calls for sprite buildings with baked shadows rather than final art made from code shapes.
+
+### Alternatives Considered
+
+- Keep Dashboard in the dock: rejected because Base is the actual game surface.
+- Keep HQ selected and details open by default: rejected because the user should enter the village before choosing what to inspect.
+- Keep improving only Phaser shapes: rejected because placeholder art should not become the long-term art pipeline.
+
+### Master Plan Link
+
+Aligned with Part I and Part II.
+
+## 2026-06-25
+
+### Decision
+
 Add Supabase schema, seed SQL, setup docs, env example, and a mock-first data-source abstraction while keeping mock mode as the default.
 
 ### Why

@@ -8,7 +8,6 @@ import {
   Coins,
   Home,
   Landmark,
-  LayoutDashboard,
   Library,
   ListTodo,
   Settings,
@@ -16,7 +15,6 @@ import {
 import { cn } from "@/lib/utils/cn";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/base", label: "Base", icon: Home },
   { href: "/buildings", label: "Buildings", icon: Landmark },
   { href: "/agents", label: "Agents", icon: Bot },
@@ -32,10 +30,12 @@ export function BottomDock() {
 
   return (
     <nav className="fixed inset-x-3 bottom-4 z-40 mx-auto w-[min(calc(100%-1.5rem),980px)] overflow-x-auto rounded-xl border border-white/[0.12] bg-zinc-950/[0.58] p-2 shadow-[0_18px_70px_rgba(0,0,0,0.42)] backdrop-blur-2xl">
-      <div className="flex min-w-max gap-1 md:grid md:min-w-0 md:grid-cols-9">
+      <div className="flex min-w-max gap-1 md:grid md:min-w-0 md:grid-cols-8">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href || (item.href === "/dashboard" && pathname === "/");
+          const active =
+            pathname === item.href ||
+            (item.href === "/base" && (pathname === "/" || pathname === "/dashboard"));
 
           return (
             <Link

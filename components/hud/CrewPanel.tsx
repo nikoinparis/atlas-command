@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils/cn";
 
 interface CrewPanelProps {
   agents: Agent[];
-  selectedAgentId: string;
+  selectedAgentId: string | null;
   onSelectAgent: (agentId: string) => void;
   className?: string;
 }

@@ -1,5 +1,5 @@
-import { AppShell } from "@/components/layout/AppShell";
+import { redirect } from "next/navigation";
 
 export default function DashboardPage() {
-  return <AppShell />;
+  redirect("/base");
 }

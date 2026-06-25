@@ -6,7 +6,7 @@ The app uses static mock data under `lib/mock-data/` and strong domain types und
 
 React renders the shell, HUD, bottom dock, drawers, overlays, task board, Approval Court, Treasury dashboard, settings, and docs. Phaser renders only the village canvas and emits building selection events back to React.
 
-The dashboard/base routes now use a village-first layout:
+The Base route is the primary village-first layout. `/` and `/dashboard` redirect to `/base` for compatibility:
 
 - compact top HUD,
 - full-screen Phaser village,
@@ -15,7 +15,9 @@ The dashboard/base routes now use a village-first layout:
 - floating right selected-building/agent details overlay,
 - compact event log drawer.
 
-The HUD, drawers, details panel, event log, and dock should behave as floating glass overlays over the Phaser map. Side overlays share a bounded top and bottom rhythm, scroll internally, and stop above the bottom dock so the village remains visible and interactive.
+The HUD, drawers, details panel, event log, and dock should behave as floating glass overlays over the Phaser map. Crew, Details, and Log controls sit below the top HUD with a clear gap. Side overlays share a bounded top and bottom rhythm, scroll internally, and stop above the bottom dock so the village remains visible and interactive.
+
+The details panel starts closed. It opens when a building or crew agent is selected, or when the user presses Details. If no entity is selected, the panel shows a compact empty state instead of defaulting to HQ.
 
 ## Future Supabase Architecture
 
@@ -65,7 +67,9 @@ Phaser owns:
 
 - organic grass/ground variation without a visible tile grid
 - paths, trees, rocks, fences, bushes, flowers, shadows, and placeholder scenery
-- building shapes
+- building rendering through `lib/game/buildingAssets.ts`
+- future PNG/WebP building sprites loaded from `public/assets/buildings/`
+- generated fallback building silhouettes when sprite assets are not enabled
 - floating building labels
 - status glows
 - hover and click hit testing
@@ -83,3 +87,7 @@ React owns:
 - settings
 
 The contract is intentionally small: Phaser calls `onSelectBuilding(buildingId)`, and React passes back the selected building id for highlighting.
+
+## Art Pipeline
+
+`docs/ART_PIPELINE.md` defines the sprite workflow, naming conventions, recommended dimensions, prompt templates, licensing cautions, and registry fields for click zones, labels, anchors, and shadows. Finished art should be created outside the app, then integrated by updating `lib/game/buildingAssets.ts`.

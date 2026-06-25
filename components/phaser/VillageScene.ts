@@ -1,6 +1,12 @@
 import type Phaser from "phaser";
 import { buildingStatusPalette, categoryAccent } from "@/components/phaser/buildingSprites";
 import type { VillageSceneApi, VillageSceneOptions } from "@/components/phaser/gameTypes";
+import {
+  getBuildingAsset,
+  getEnabledBuildingAssets,
+  type BuildingAssetConfig,
+  type BuildingFallbackStyle,
+} from "@/lib/game/buildingAssets";
 
 type PhaserRuntime = typeof Phaser;
 
@@ -27,6 +33,12 @@ export function createVillageScene(
       super({ key: "VillageScene" });
     }
 
+    preload() {
+      getEnabledBuildingAssets().forEach((asset) => {
+        this.load.image(asset.key, asset.path);
+      });
+    }
+
     create() {
       this.cameras.main.setBackgroundColor("#102115");
       this.isReady = true;
@@ -41,7 +53,7 @@ export function createVillageScene(
       this.drawScene();
     }
 
-    setSelectedBuilding(buildingId: string) {
+    setSelectedBuilding(buildingId: string | null) {
       this.selectedBuildingId = buildingId;
       this.refreshSelection();
     }
@@ -135,11 +147,13 @@ export function createVillageScene(
       const branchA = [this.toScreen(0, -6), this.toScreen(0, -120)];
       const branchB = [this.toScreen(0, -6), this.toScreen(18, 100), this.toScreen(162, 220)];
       const branchC = [this.toScreen(-180, 86), this.toScreen(-150, 220)];
+      const branchD = [this.toScreen(178, -8), this.toScreen(248, -82), this.toScreen(330, -116)];
+      const branchE = [this.toScreen(-180, 86), this.toScreen(-272, 34), this.toScreen(-356, -34)];
 
       this.strokePath(graphics, pathPoints, 48, 0x6d5934, 0.16, 9);
       this.strokePath(graphics, pathPoints, 42, 0xefe0ad, 0.82, 9);
       this.strokePath(graphics, pathPoints, 28, 0xcaa976, 0.42, 9);
-      [branchA, branchB, branchC].forEach((branch) => {
+      [branchA, branchB, branchC, branchD, branchE].forEach((branch) => {
         this.strokePath(graphics, branch, 34, 0x6d5934, 0.13, 7);
         this.strokePath(graphics, branch, 30, 0xefe0ad, 0.72, 7);
         this.strokePath(graphics, branch, 19, 0xcaa976, 0.38, 7);
@@ -152,6 +166,8 @@ export function createVillageScene(
         this.toScreen(84, 42),
         this.toScreen(226, 76),
         this.toScreen(-64, -72),
+        this.toScreen(272, -92),
+        this.toScreen(-302, -12),
       ].forEach((point, index) => {
         graphics.fillCircle(point.x + index * 4, point.y + 8, 4 + (index % 2));
       });
@@ -185,16 +201,21 @@ export function createVillageScene(
       const treePositions = [
         [-470, -190],
         [-390, -118],
+        [-518, -66],
         [-432, 34],
         [-388, 252],
         [-238, 278],
         [280, -180],
+        [346, -246],
         [410, -94],
         [436, 100],
+        [492, 176],
         [340, 262],
         [48, 318],
         [-36, -242],
         [198, 312],
+        [-520, 176],
+        [500, -18],
       ];
 
       treePositions.forEach(([x, y], index) => {
@@ -243,61 +264,68 @@ export function createVillageScene(
         [174, -126],
         [-294, 74],
       ].forEach(([x, y], index) => this.drawFlowerClump(x, y, index));
+
+      [
+        [-246, 100],
+        [238, -34],
+        [108, 166],
+        [-58, -112],
+      ].forEach(([x, y]) => this.drawLanternPost(x, y));
+
+      [
+        [-210, 136],
+        [286, 86],
+        [92, 208],
+      ].forEach(([x, y], index) => this.drawCrateStack(x, y, index));
+
+      this.drawWell(-70, 18);
     }
 
     private drawBuildings() {
       const sorted = [...options.buildings].sort((a, b) => a.position.y - b.position.y);
       sorted.forEach((building) => {
         const { x, y } = this.toScreen(building.position.x, building.position.y);
+        const asset = getBuildingAsset(building.id);
         const palette = buildingStatusPalette[building.status];
         const accent = categoryAccent[building.category] ?? 0xffffff;
-        const roofColor = this.getRoofColor(building.id);
-        const wallColor = this.getWallColor(building.id);
         const labelText = this.getBuildingLabel(building.id, building.shortName);
-        const width = building.id === "keep-hall" ? 92 : 74;
-        const height = building.id === "keep-hall" ? 66 : 54;
         const container = this.add.container(x, y);
-        const glow = this.add.ellipse(0, 14, width + 56, 48, palette.glow, 0.16);
-        const shadow = this.add.ellipse(4, 38, width + 62, 30, 0x07100b, 0.35);
-        const base = this.add.rectangle(0, 5, width, height, wallColor, 0.98);
-        const side = this.add.polygon(
-          width / 2,
-          9,
-          [0, -height / 2, 22, -height / 2 - 12, 22, height / 2 - 8, 0, height / 2],
-          this.darken(wallColor),
-          0.94,
+        const glow = this.add.ellipse(
+          asset.shadow.offsetX,
+          asset.shadow.offsetY - 4,
+          asset.shadow.width + 42,
+          asset.shadow.height + 24,
+          palette.glow,
+          0.14,
         );
-        const roof = this.add.polygon(
+        const shadow = this.add.ellipse(
+          asset.shadow.offsetX,
+          asset.shadow.offsetY,
+          asset.shadow.width,
+          asset.shadow.height,
+          0x07100b,
+          asset.shadow.alpha,
+        );
+        const base = this.add.rectangle(
           0,
-          -36,
-          [
-            -width / 2 - 18,
-            14,
-            0,
-            -height / 2 + 2,
-            width / 2 + 18,
-            14,
-            width / 2,
-            30,
-            0,
-            2,
-            -width / 2,
-            30,
-          ],
-          roofColor,
-          0.98,
+          asset.clickZone.offsetY + asset.clickZone.height / 2,
+          asset.clickZone.width,
+          asset.clickZone.height,
+          0x000000,
+          0,
         );
-        const roofLineA = this.add.rectangle(-20, -25, 42, 4, this.lighten(roofColor), 0.45);
-        const roofLineB = this.add.rectangle(18, -13, 42, 4, this.lighten(roofColor), 0.36);
-        roofLineA.setRotation(-0.52);
-        roofLineB.setRotation(0.52);
-        const door = this.add.rectangle(-6, 22, 14, 28, 0x3b2518, 0.95);
-        const windowA = this.add.rectangle(-26, 0, 9, 14, accent, 0.82);
-        const windowB = this.add.rectangle(24, 0, 9, 14, accent, 0.82);
-        const lantern = this.add.circle(width / 2 + 11, -23, 5, palette.glow, 0.95);
-        const labelBg = this.add.rectangle(0, -92, Math.max(58, labelText.length * 8 + 18), 22, 0x0b1210, 0.72);
+        const art = this.createBuildingArt(asset, accent);
+        const lantern = this.add.circle(asset.width / 2 - 12, asset.labelOffsetY + 22, 5, palette.glow, 0.94);
+        const labelBg = this.add.rectangle(
+          0,
+          asset.labelOffsetY,
+          Math.max(58, labelText.length * 8 + 18),
+          22,
+          0x0b1210,
+          0.72,
+        );
         const label = this.add
-          .text(0, -93, labelText, {
+          .text(0, asset.labelOffsetY - 1, labelText, {
             align: "center",
             color: "#fff8d7",
             fontFamily: "Geist Mono, monospace",
@@ -308,7 +336,7 @@ export function createVillageScene(
           })
           .setOrigin(0.5, 0.5);
         const statusText = this.add
-          .text(0, 55, palette.label, {
+          .text(0, asset.statusOffsetY, palette.label, {
             align: "center",
             color: "#e6ddb5",
             fontFamily: "Geist Mono, monospace",
@@ -319,28 +347,27 @@ export function createVillageScene(
           .setOrigin(0.5, 0);
 
         labelBg.setStrokeStyle(1, palette.glow, 0.24);
-        base.setStrokeStyle(2, 0x301d14, 0.42);
-        roof.setStrokeStyle(2, palette.glow, 0.34);
+        base.setStrokeStyle(2, 0xfff3b0, 0);
+        base.setVisible(false);
         container.add([
           glow,
           shadow,
-          side,
           base,
-          roof,
-          roofLineA,
-          roofLineB,
-          door,
-          windowA,
-          windowB,
+          ...art,
           lantern,
           labelBg,
           label,
           statusText,
         ]);
         container.setDepth(y);
-        container.setSize(width + 78, 166);
+        container.setSize(asset.clickZone.width, asset.clickZone.height);
         container.setInteractive(
-          new PhaserLib.Geom.Rectangle(-(width + 78) / 2, -108, width + 78, 178),
+          new PhaserLib.Geom.Rectangle(
+            -asset.clickZone.width / 2,
+            asset.clickZone.offsetY,
+            asset.clickZone.width,
+            asset.clickZone.height,
+          ),
           PhaserLib.Geom.Rectangle.Contains,
         );
         container.on("pointerover", () => {
@@ -367,6 +394,316 @@ export function createVillageScene(
 
         this.buildingNodes.set(building.id, { container, glow, base, label, statusText });
       });
+    }
+
+    private createBuildingArt(asset: BuildingAssetConfig, accent: number) {
+      if (asset.spriteEnabled && this.textures.exists(asset.key)) {
+        const sprite = this.add
+          .image(0, 0, asset.key)
+          .setDisplaySize(asset.width, asset.height)
+          .setOrigin(asset.anchor.x, asset.anchor.y);
+
+        return [sprite];
+      }
+
+      return this.createFallbackBuilding(asset, accent);
+    }
+
+    private createFallbackBuilding(asset: BuildingAssetConfig, accent: number) {
+      const style = asset.fallbackStyle;
+
+      switch (style.silhouette) {
+        case "keep":
+          return this.createKeepFallback(asset, style, accent);
+        case "treasury":
+          return this.createTreasuryFallback(asset, style, accent);
+        case "studio":
+          return this.createStudioFallback(asset, style, accent);
+        case "workshop":
+          return this.createWorkshopFallback(asset, style, accent);
+        case "guild":
+          return this.createGuildFallback(asset, style, accent);
+        case "court":
+          return this.createCourtFallback(asset, style, accent);
+        case "library":
+          return this.createLibraryFallback(asset, style, accent);
+        case "engineering":
+          return this.createEngineeringFallback(asset, style, accent);
+        case "tower":
+          return this.createTowerFallback(asset, style, accent);
+      }
+    }
+
+    private createHouseCore(
+      asset: BuildingAssetConfig,
+      style: BuildingFallbackStyle,
+      accent: number,
+      options: {
+        wallWidth?: number;
+        wallHeight?: number;
+        roofHeight?: number;
+        footY?: number;
+        doorWidth?: number;
+        doorHeight?: number;
+      } = {},
+    ) {
+      const wallWidth = options.wallWidth ?? asset.width * 0.56;
+      const wallHeight = options.wallHeight ?? asset.height * 0.34;
+      const roofHeight = options.roofHeight ?? asset.height * 0.28;
+      const footY = options.footY ?? 14;
+      const wallCenterY = footY - wallHeight / 2;
+      const roofY = wallCenterY - wallHeight / 2;
+      const sideDepth = Math.max(18, wallWidth * 0.24);
+      const items: Phaser.GameObjects.GameObject[] = [];
+
+      const side = this.add.polygon(
+        wallWidth / 2,
+        wallCenterY + 3,
+        [0, -wallHeight / 2, sideDepth, -wallHeight / 2 - 10, sideDepth, wallHeight / 2 - 6, 0, wallHeight / 2],
+        style.sideColor,
+        0.96,
+      );
+      const front = this.add.rectangle(0, wallCenterY, wallWidth, wallHeight, style.wallColor, 0.98);
+      const roof = this.add.polygon(
+        0,
+        roofY - 8,
+        [
+          -wallWidth / 2 - 18,
+          18,
+          -wallWidth * 0.18,
+          -roofHeight,
+          wallWidth * 0.18,
+          -roofHeight,
+          wallWidth / 2 + 18,
+          18,
+          wallWidth / 2 + 7,
+          32,
+          0,
+          6,
+          -wallWidth / 2 - 7,
+          32,
+        ],
+        style.roofColor,
+        0.98,
+      );
+      const roofShade = this.add.polygon(
+        wallWidth * 0.22,
+        roofY + 2,
+        [0, -roofHeight + 2, wallWidth * 0.34, 9, wallWidth * 0.22, 21, -wallWidth * 0.1, -2],
+        style.roofDarkColor,
+        0.44,
+      );
+      const roofHighlight = this.add.rectangle(-wallWidth * 0.16, roofY - 12, wallWidth * 0.42, 4, this.lighten(style.roofColor), 0.42);
+      roofHighlight.setRotation(-0.46);
+      const door = this.add.rectangle(
+        -wallWidth * 0.12,
+        footY - (options.doorHeight ?? 27) / 2,
+        options.doorWidth ?? 15,
+        options.doorHeight ?? 27,
+        0x342116,
+        0.96,
+      );
+      const windowA = this.add.rectangle(-wallWidth * 0.32, wallCenterY - 4, 9, 13, accent, 0.8);
+      const windowB = this.add.rectangle(wallWidth * 0.25, wallCenterY - 2, 9, 13, accent, 0.78);
+
+      side.setStrokeStyle(1, 0x1b130d, 0.28);
+      front.setStrokeStyle(1, style.trimColor, 0.22);
+      roof.setStrokeStyle(2, style.trimColor, 0.3);
+      door.setStrokeStyle(1, 0x0f0906, 0.35);
+      windowA.setStrokeStyle(1, 0xe9fbff, 0.22);
+      windowB.setStrokeStyle(1, 0xe9fbff, 0.22);
+
+      items.push(side, front, roof, roofShade, roofHighlight, door, windowA, windowB);
+
+      return { items, wallWidth, wallHeight, wallCenterY, roofY, footY };
+    }
+
+    private createKeepFallback(asset: BuildingAssetConfig, style: BuildingFallbackStyle, accent: number) {
+      const items: Phaser.GameObjects.GameObject[] = [];
+      [-46, 47].forEach((towerX, index) => {
+        const tower = this.add.rectangle(towerX, -26, 26, 58, style.sideColor, 0.98);
+        const cap = this.add.polygon(
+          towerX,
+          -63,
+          [-20, 16, 0, -16, 20, 16, 13, 26, 0, 9, -13, 26],
+          index === 0 ? style.roofDarkColor : style.roofColor,
+          0.98,
+        );
+        const slit = this.add.rectangle(towerX, -28, 5, 16, accent, 0.78);
+        tower.setStrokeStyle(1, style.trimColor, 0.22);
+        cap.setStrokeStyle(1, style.trimColor, 0.28);
+        items.push(tower, cap, slit);
+      });
+
+      const core = this.createHouseCore(asset, style, accent, {
+        wallWidth: 82,
+        wallHeight: 48,
+        roofHeight: 34,
+        doorWidth: 18,
+        doorHeight: 32,
+      });
+      const bannerPole = this.add.rectangle(0, -76, 4, 38, style.trimColor, 0.78);
+      const banner = this.add.polygon(12, -84, [-2, -11, 26, -5, 21, 10, -2, 7], accent, 0.88);
+      banner.setStrokeStyle(1, 0x07100b, 0.24);
+
+      return [...items, ...core.items, bannerPole, banner];
+    }
+
+    private createTreasuryFallback(asset: BuildingAssetConfig, style: BuildingFallbackStyle, accent: number) {
+      const core = this.createHouseCore(asset, style, accent, {
+        wallWidth: 70,
+        wallHeight: 40,
+        roofHeight: 24,
+      });
+      const pediment = this.add.polygon(0, core.roofY - 31, [-42, 24, 0, -7, 42, 24], style.trimColor, 0.36);
+      const vaultTop = this.add.circle(0, core.footY - 23, 15, 0x1f2933, 0.96);
+      const vaultBottom = this.add.rectangle(0, core.footY - 12, 30, 23, 0x1f2933, 0.96);
+      const vaultRim = this.add.circle(0, core.footY - 14, 7, accent, 0.5);
+      const coinA = this.add.circle(-40, core.footY - 2, 5, 0xfcd34d, 0.82);
+      const coinB = this.add.circle(39, core.footY - 4, 4, 0xfbbf24, 0.78);
+      [vaultTop, vaultBottom].forEach((item) => item.setStrokeStyle(1, style.trimColor, 0.28));
+
+      return [...core.items, pediment, vaultTop, vaultBottom, vaultRim, coinA, coinB];
+    }
+
+    private createStudioFallback(asset: BuildingAssetConfig, style: BuildingFallbackStyle, accent: number) {
+      const core = this.createHouseCore(asset, style, accent, {
+        wallWidth: 68,
+        wallHeight: 38,
+        roofHeight: 28,
+      });
+      const skylight = this.add.rectangle(-10, core.roofY - 22, 26, 8, 0xbae6fd, 0.74);
+      skylight.setRotation(-0.45);
+      const palette = this.add.circle(37, core.wallCenterY - 8, 8, style.trimColor, 0.82);
+      const paintA = this.add.circle(34, core.wallCenterY - 10, 2, 0xfb7185, 0.9);
+      const paintB = this.add.circle(39, core.wallCenterY - 5, 2, 0xfbbf24, 0.9);
+      const paintC = this.add.circle(42, core.wallCenterY - 11, 2, 0x34d399, 0.9);
+      const pennantLine = this.add.rectangle(0, core.roofY - 38, 52, 2, style.trimColor, 0.6);
+      pennantLine.setRotation(0.1);
+
+      return [...core.items, skylight, palette, paintA, paintB, paintC, pennantLine];
+    }
+
+    private createWorkshopFallback(asset: BuildingAssetConfig, style: BuildingFallbackStyle, accent: number) {
+      const chimney = this.add.rectangle(34, -56, 14, 36, 0x4a2d1d, 0.96);
+      const smoke = this.add.circle(39, -82, 8, 0x91a39a, 0.22);
+      const core = this.createHouseCore(asset, style, accent, {
+        wallWidth: 72,
+        wallHeight: 39,
+        roofHeight: 27,
+      });
+      const gear = this.add.circle(38, core.wallCenterY + 4, 9, 0x1f2933, 0.8);
+      const gearHub = this.add.circle(38, core.wallCenterY + 4, 3, accent, 0.82);
+      const crate = this.add.rectangle(-43, core.footY - 5, 14, 14, 0x8d6336, 0.82);
+      gear.setStrokeStyle(2, style.trimColor, 0.32);
+      crate.setStrokeStyle(1, style.trimColor, 0.24);
+
+      return [chimney, smoke, ...core.items, gear, gearHub, crate];
+    }
+
+    private createGuildFallback(asset: BuildingAssetConfig, style: BuildingFallbackStyle, accent: number) {
+      const core = this.createHouseCore(asset, style, accent, {
+        wallWidth: 76,
+        wallHeight: 41,
+        roofHeight: 29,
+      });
+      const signPost = this.add.rectangle(47, core.wallCenterY - 10, 3, 30, style.trimColor, 0.78);
+      const sign = this.add.rectangle(55, core.wallCenterY + 1, 25, 14, 0x3b2518, 0.94);
+      const mug = this.add.circle(55, core.wallCenterY + 1, 4, accent, 0.76);
+      const awning = this.add.rectangle(-5, core.footY - 33, 52, 6, style.trimColor, 0.34);
+      awning.setRotation(-0.04);
+      sign.setStrokeStyle(1, style.trimColor, 0.35);
+
+      return [...core.items, signPost, sign, mug, awning];
+    }
+
+    private createCourtFallback(asset: BuildingAssetConfig, style: BuildingFallbackStyle, accent: number) {
+      const items: Phaser.GameObjects.GameObject[] = [];
+      const body = this.add.rectangle(0, -10, 78, 46, style.wallColor, 0.98);
+      const side = this.add.polygon(39, -9, [0, -23, 20, -31, 20, 19, 0, 23], style.sideColor, 0.96);
+      const pediment = this.add.polygon(0, -52, [-54, 29, 0, -18, 54, 29], style.roofColor, 0.98);
+      const baseStep = this.add.rectangle(0, 17, 92, 9, style.trimColor, 0.36);
+      body.setStrokeStyle(1, style.trimColor, 0.22);
+      side.setStrokeStyle(1, 0x1b130d, 0.24);
+      pediment.setStrokeStyle(2, style.trimColor, 0.32);
+      items.push(side, body, pediment, baseStep);
+
+      [-27, -9, 9, 27].forEach((columnX) => {
+        const column = this.add.rectangle(columnX, -3, 7, 40, style.trimColor, 0.76);
+        const cap = this.add.rectangle(columnX, -24, 12, 4, 0xf0ddab, 0.72);
+        const foot = this.add.rectangle(columnX, 18, 13, 5, 0xd8c690, 0.66);
+        items.push(column, cap, foot);
+      });
+
+      const lantern = this.add.circle(42, -34, 4, accent, 0.9);
+      return [...items, lantern];
+    }
+
+    private createLibraryFallback(asset: BuildingAssetConfig, style: BuildingFallbackStyle, accent: number) {
+      const backTower = this.add.rectangle(-36, -31, 26, 66, style.sideColor, 0.96);
+      const backRoof = this.add.polygon(-36, -75, [-18, 15, 0, -15, 18, 15, 11, 25, 0, 8, -11, 25], style.roofDarkColor, 0.98);
+      const core = this.createHouseCore(asset, style, accent, {
+        wallWidth: 70,
+        wallHeight: 44,
+        roofHeight: 27,
+      });
+      const bookA = this.add.rectangle(28, core.wallCenterY + 4, 6, 25, 0x7c3aed, 0.8);
+      const bookB = this.add.rectangle(36, core.wallCenterY + 2, 6, 29, 0x0ea5e9, 0.8);
+      const bookC = this.add.rectangle(44, core.wallCenterY + 6, 6, 21, 0xf59e0b, 0.8);
+      const arch = this.add.rectangle(-8, core.footY - 15, 20, 30, 0x302620, 0.82);
+      backTower.setStrokeStyle(1, style.trimColor, 0.24);
+      backRoof.setStrokeStyle(1, style.trimColor, 0.24);
+      bookA.setStrokeStyle(1, style.trimColor, 0.24);
+      bookB.setStrokeStyle(1, style.trimColor, 0.24);
+      bookC.setStrokeStyle(1, style.trimColor, 0.24);
+      arch.setStrokeStyle(1, style.trimColor, 0.24);
+
+      return [backTower, backRoof, ...core.items, bookA, bookB, bookC, arch];
+    }
+
+    private createEngineeringFallback(asset: BuildingAssetConfig, style: BuildingFallbackStyle, accent: number) {
+      const core = this.createWorkshopFallback(asset, style, accent);
+      const items: Phaser.GameObjects.GameObject[] = [...core];
+      [-54, 54].forEach((postX) => {
+        const post = this.add.rectangle(postX, -12, 5, 64, 0xd9b16f, 0.72);
+        const railA = this.add.rectangle(postX / 2, -36, 64, 4, 0xd9b16f, 0.68);
+        const railB = this.add.rectangle(postX / 2, -10, 64, 4, 0xd9b16f, 0.62);
+        railA.setRotation(postX < 0 ? -0.2 : 0.2);
+        railB.setRotation(postX < 0 ? 0.14 : -0.14);
+        items.push(post, railA, railB);
+      });
+      const sparkA = this.add.circle(48, -46, 2, accent, 0.92);
+      const sparkB = this.add.circle(55, -38, 2, 0xfcd34d, 0.88);
+      items.push(sparkA, sparkB);
+
+      return items;
+    }
+
+    private createTowerFallback(asset: BuildingAssetConfig, style: BuildingFallbackStyle, accent: number) {
+      const items: Phaser.GameObjects.GameObject[] = [];
+      const lower = this.add.polygon(0, -14, [-28, -31, 26, -39, 34, 29, -34, 34], style.sideColor, 0.98);
+      const shaft = this.add.rectangle(0, -45, 48, 78, style.wallColor, 0.98);
+      const bandA = this.add.rectangle(0, -71, 54, 6, style.trimColor, 0.38);
+      const bandB = this.add.rectangle(0, -28, 54, 6, style.trimColor, 0.32);
+      const observatory = this.add.ellipse(0, -95, 70, 30, style.roofColor, 0.98);
+      const dome = this.add.circle(0, -108, 25, style.roofDarkColor, 0.96);
+      const lens = this.add.circle(19, -103, 7, accent, 0.86);
+      const telescope = this.add.rectangle(36, -111, 35, 6, style.trimColor, 0.76);
+      telescope.setRotation(-0.28);
+      const door = this.add.rectangle(-8, 7, 15, 28, 0x261813, 0.95);
+      const windowA = this.add.rectangle(0, -57, 9, 14, 0xbae6fd, 0.76);
+      const windowB = this.add.rectangle(0, -17, 9, 14, 0xbae6fd, 0.72);
+
+      lower.setStrokeStyle(1, style.trimColor, 0.25);
+      shaft.setStrokeStyle(1, style.trimColor, 0.25);
+      observatory.setStrokeStyle(1, style.trimColor, 0.25);
+      dome.setStrokeStyle(1, style.trimColor, 0.25);
+      door.setStrokeStyle(1, style.trimColor, 0.25);
+      windowA.setStrokeStyle(1, style.trimColor, 0.25);
+      windowB.setStrokeStyle(1, style.trimColor, 0.25);
+      items.push(lower, shaft, bandA, bandB, observatory, dome, lens, telescope, door, windowA, windowB);
+
+      return items;
     }
 
     private drawAgents() {
@@ -398,6 +735,7 @@ export function createVillageScene(
     private refreshSelection() {
       this.buildingNodes.forEach((node, buildingId) => {
         const selected = buildingId === this.selectedBuildingId;
+        node.base.setVisible(selected);
         node.base.setStrokeStyle(selected ? 4 : 2, selected ? 0xfff3b0 : 0x301d14, selected ? 0.9 : 0.42);
         node.label.setColor(selected ? "#ffffff" : "#fff8d7");
         node.statusText.setColor(selected ? "#fff3b0" : "#e6ddb5");
@@ -480,6 +818,53 @@ export function createVillageScene(
       this.tileGroup?.add(graphics);
     }
 
+    private drawLanternPost(x: number, y: number) {
+      const point = this.toScreen(x, y);
+      const post = this.add.rectangle(point.x, point.y - 9, 5, 34, 0x6b4428, 0.88);
+      const arm = this.add.rectangle(point.x + 10, point.y - 24, 24, 4, 0x8d6336, 0.82);
+      const lantern = this.add.circle(point.x + 22, point.y - 22, 6, 0xfbbf24, 0.76);
+      const glow = this.add.circle(point.x + 22, point.y - 22, 15, 0xfbbf24, 0.12);
+      const shadow = this.add.ellipse(point.x + 4, point.y + 10, 24, 8, 0x07100b, 0.18);
+
+      [shadow, post, arm, glow, lantern].forEach((item) => {
+        item.setDepth(point.y + 12);
+        this.tileGroup?.add(item);
+      });
+    }
+
+    private drawCrateStack(x: number, y: number, variant: number) {
+      const point = this.toScreen(x, y);
+      const shadow = this.add.ellipse(point.x + 4, point.y + 10, 42, 12, 0x07100b, 0.18);
+      const crateA = this.add.rectangle(point.x - 10, point.y, 18, 16, 0x8d6336, 0.84);
+      const crateB = this.add.rectangle(point.x + 8, point.y + 2, 18, 16, 0x6f4828, 0.84);
+      const barrel = this.add.ellipse(point.x + (variant % 2 === 0 ? 22 : -24), point.y + 2, 15, 18, 0x70411f, 0.82);
+
+      [crateA, crateB].forEach((crate) => crate.setStrokeStyle(1, 0xd9b16f, 0.22));
+      barrel.setStrokeStyle(1, 0xd9b16f, 0.24);
+      [shadow, crateA, crateB, barrel].forEach((item) => {
+        item.setDepth(point.y + 16);
+        this.tileGroup?.add(item);
+      });
+    }
+
+    private drawWell(x: number, y: number) {
+      const point = this.toScreen(x, y);
+      const shadow = this.add.ellipse(point.x + 4, point.y + 18, 58, 16, 0x07100b, 0.2);
+      const base = this.add.ellipse(point.x, point.y + 7, 42, 24, 0x6b6254, 0.9);
+      const water = this.add.ellipse(point.x, point.y + 4, 28, 12, 0x155e75, 0.7);
+      const postA = this.add.rectangle(point.x - 22, point.y - 14, 5, 38, 0x8d6336, 0.85);
+      const postB = this.add.rectangle(point.x + 22, point.y - 14, 5, 38, 0x8d6336, 0.85);
+      const roof = this.add.polygon(point.x, point.y - 39, [-34, 14, 0, -14, 34, 14, 24, 24, 0, 4, -24, 24], 0x8f5729, 0.94);
+
+      base.setStrokeStyle(1, 0xd8d0ba, 0.28);
+      water.setStrokeStyle(1, 0x67e8f9, 0.2);
+      roof.setStrokeStyle(1, 0xd9b16f, 0.28);
+      [shadow, base, water, postA, postB, roof].forEach((item) => {
+        item.setDepth(point.y + 24);
+        this.tileGroup?.add(item);
+      });
+    }
+
     private getBuildingLabel(buildingId: string, fallback: string) {
       const labels: Record<string, string> = {
         "keep-hall": "HQ",
@@ -494,45 +879,6 @@ export function createVillageScene(
       };
 
       return labels[buildingId] ?? fallback;
-    }
-
-    private getRoofColor(buildingId: string) {
-      const roofs: Record<string, number> = {
-        "keep-hall": 0x335c4b,
-        treasury: 0xc1782b,
-        "content-studio": 0x3f86a8,
-        "product-workshop": 0x8f5729,
-        "freelance-guild": 0xb8752b,
-        "engineering-workshop": 0x4b8dbb,
-        "approval-court": 0x3f7d63,
-        "research-library": 0x7f7a7c,
-        "allocation-tower": 0x2f7d8e,
-      };
-
-      return roofs[buildingId] ?? 0x8f5729;
-    }
-
-    private getWallColor(buildingId: string) {
-      const walls: Record<string, number> = {
-        "keep-hall": 0x72523a,
-        treasury: 0x7a4a24,
-        "content-studio": 0x4f5e61,
-        "product-workshop": 0x765139,
-        "freelance-guild": 0x70411f,
-        "engineering-workshop": 0x564b44,
-        "approval-court": 0x5d5949,
-        "research-library": 0x5d514d,
-        "allocation-tower": 0x435d61,
-      };
-
-      return walls[buildingId] ?? 0x765139;
-    }
-
-    private darken(color: number) {
-      const r = Math.max(0, ((color >> 16) & 0xff) - 36);
-      const g = Math.max(0, ((color >> 8) & 0xff) - 36);
-      const b = Math.max(0, (color & 0xff) - 36);
-      return (r << 16) + (g << 8) + b;
     }
 
     private lighten(color: number) {

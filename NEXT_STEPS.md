@@ -4,9 +4,14 @@
 
 - Run `npm install`.
 - Run `npm run dev`.
-- Open `http://localhost:3000/dashboard` and inspect the UI.
+- Open `http://localhost:3000/base` and inspect the UI.
+- Confirm `/` and `/dashboard` redirect to `/base`.
+- Confirm the bottom dock no longer includes Dashboard and starts with Base.
+- Confirm Details does not auto-open on first load.
+- Press Details before selecting anything and confirm the compact empty state appears.
 - Click each building on the village canvas.
 - Open and close the Crew drawer, Details overlay, and Log drawer.
+- Confirm Crew, Details, and Log controls have clear spacing below the top HUD.
 - Confirm the village reads as organic terrain rather than a visible grid, with the map filling the screen behind the overlays.
 - Confirm the Crew drawer, Details panel, Log drawer, and bottom dock float above the village without covering each other.
 - Confirm the Crew roster and Details panel scroll internally and stop above the bottom dock.
@@ -31,8 +36,10 @@
 - Review and refine the Supabase schema in `supabase/schema.sql`.
 - Convert the schema into migrations when Supabase is connected.
 - Add a server-side mock task API so the UI is ready for real persistence.
-- Add basic E2E smoke tests for dashboard load, building selection, approvals, and Treasury render.
+- Add basic E2E smoke tests for Base load, building selection, approvals, and Treasury render.
 - Refine Phaser visuals and add better mobile layout behavior.
+- Create or source real building sprites following `docs/ART_PIPELINE.md`.
+- Enable finished sprites one building at a time in `lib/game/buildingAssets.ts`.
 
 ## Next 30 Days
 

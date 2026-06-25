@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Bot, PanelRightClose, ScrollText, UsersRound, X } from "lucide-react";
+import { Bot, MousePointer2, PanelRightClose, ScrollText, UsersRound, X } from "lucide-react";
 import { VillageCanvas } from "@/components/game/VillageCanvas";
 import { CrewPanel } from "@/components/hud/CrewPanel";
 import { EventLog } from "@/components/hud/EventLog";
@@ -15,38 +15,41 @@ import { agents, approvals, buildings, tasks } from "@/lib/mock-data";
 import { cn } from "@/lib/utils/cn";
 
 export function AppShell() {
-  const [selectedBuildingId, setSelectedBuildingId] = useState("keep-hall");
-  const [selectedAgentId, setSelectedAgentId] = useState("atlas");
+  const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [crewOpen, setCrewOpen] = useState(false);
-  const [detailsOpen, setDetailsOpen] = useState(true);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
 
   const selectedBuilding = useMemo(
-    () => buildings.find((building) => building.id === selectedBuildingId) ?? buildings[0],
+    () => buildings.find((building) => building.id === selectedBuildingId) ?? null,
     [selectedBuildingId],
   );
   const selectedAgent = useMemo(
-    () => agents.find((agent) => agent.id === selectedAgentId) ?? agents[0],
+    () => agents.find((agent) => agent.id === selectedAgentId) ?? null,
     [selectedAgentId],
   );
   const manager = useMemo(
-    () => agents.find((agent) => agent.id === selectedBuilding.managerAgentId),
+    () => agents.find((agent) => agent.id === selectedBuilding?.managerAgentId),
     [selectedBuilding],
   );
   const selectedTasks = useMemo(
-    () => tasks.filter((task) => task.buildingId === selectedBuilding.id),
+    () => (selectedBuilding ? tasks.filter((task) => task.buildingId === selectedBuilding.id) : []),
     [selectedBuilding],
   );
   const selectedApprovals = useMemo(
-    () => approvals.filter((approval) => approval.buildingId === selectedBuilding.id),
+    () =>
+      selectedBuilding
+        ? approvals.filter((approval) => approval.buildingId === selectedBuilding.id)
+        : [],
     [selectedBuilding],
   );
   const agentBuilding = useMemo(
-    () => buildings.find((building) => building.id === selectedAgent.buildingId),
+    () => buildings.find((building) => building.id === selectedAgent?.buildingId),
     [selectedAgent],
   );
   const sidePanelClass =
-    "fixed bottom-[104px] top-[130px] z-30 rounded-xl border border-white/[0.12] bg-zinc-950/[0.58] shadow-[0_18px_70px_rgba(0,0,0,0.36)] backdrop-blur-2xl transition-transform duration-300";
+    "fixed bottom-[104px] top-[156px] z-30 rounded-xl border border-white/[0.12] bg-zinc-950/[0.58] shadow-[0_18px_70px_rgba(0,0,0,0.36)] backdrop-blur-2xl transition-transform duration-300";
 
   const selectBuilding = useCallback((buildingId: string) => {
     setSelectedBuildingId(buildingId);
@@ -78,7 +81,7 @@ export function AppShell() {
           variant="immersive"
         />
 
-        <div className="pointer-events-none fixed inset-x-0 top-[82px] z-50 mx-auto flex max-w-[1800px] items-start justify-between px-3">
+        <div className="pointer-events-none fixed inset-x-0 top-[104px] z-50 mx-auto flex max-w-[1800px] items-start justify-between px-3">
           <div className="pointer-events-auto rounded-xl border border-white/10 bg-zinc-950/[0.52] p-1 shadow-[0_12px_44px_rgba(0,0,0,0.34)] backdrop-blur-2xl">
             <Button
               aria-pressed={crewOpen}
@@ -139,7 +142,9 @@ export function AppShell() {
               <div className="flex min-w-0 items-center gap-2">
                 <Bot className="text-cyan-200" size={15} />
                 <span className="truncate text-xs font-medium text-zinc-200">
-                  {selectedBuilding.shortName} · {selectedAgent.name}
+                  {selectedBuilding && selectedAgent
+                    ? `${selectedBuilding.shortName} · ${selectedAgent.name}`
+                    : "No selection"}
                 </span>
               </div>
               <Button
@@ -151,14 +156,29 @@ export function AppShell() {
               />
             </div>
             <div className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
-              <AgentPanel agent={selectedAgent} building={agentBuilding} />
-              <BuildingPanel
-                approvals={selectedApprovals}
-                building={selectedBuilding}
-                manager={manager}
-                tasks={selectedTasks}
-              />
-              <ChatPanel selectedBuilding={selectedBuilding} />
+              {selectedBuilding && selectedAgent ? (
+                <>
+                  <AgentPanel agent={selectedAgent} building={agentBuilding} />
+                  <BuildingPanel
+                    approvals={selectedApprovals}
+                    building={selectedBuilding}
+                    manager={manager}
+                    tasks={selectedTasks}
+                  />
+                  <ChatPanel selectedBuilding={selectedBuilding} />
+                </>
+              ) : (
+                <div className="rounded-lg border border-cyan-300/15 bg-cyan-300/[0.06] p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-zinc-50">
+                    <MousePointer2 className="text-cyan-200" size={16} />
+                    Select a building or agent
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-zinc-400">
+                    Click a village building or open Crew and choose an agent to inspect tasks,
+                    approvals, Treasury context, and chat.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </aside>

@@ -8,7 +8,6 @@ import {
   Coins,
   Home,
   Landmark,
-  LayoutDashboard,
   Library,
   ListTodo,
   Settings,
@@ -16,7 +15,6 @@ import {
 import { cn } from "@/lib/utils/cn";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/base", label: "Base", icon: Home },
   { href: "/buildings", label: "Buildings", icon: Landmark },
   { href: "/agents", label: "Agents", icon: Bot },
@@ -35,7 +33,9 @@ export function Sidebar() {
       <div className="grid grid-cols-3 gap-1 xl:grid-cols-1">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href || (item.href === "/dashboard" && pathname === "/");
+          const active =
+            pathname === item.href ||
+            (item.href === "/base" && (pathname === "/" || pathname === "/dashboard"));
 
           return (
             <Link

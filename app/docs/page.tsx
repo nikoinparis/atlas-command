@@ -15,6 +15,10 @@ const sections = [
     body: "Treasury tracks mock cost events, revenue events, ROI, AI budget caps, hosting spend, and paper-only Atlas Allocation placeholders. Numbers are calculated locally and are ready to be moved behind database queries later.",
   },
   {
+    title: "Art Pipeline",
+    body: "Building rendering is now asset-ready. Generated Phaser silhouettes stay as fallbacks, while future PNG/WebP sprites, click zones, labels, anchors, and shadows are configured through lib/game/buildingAssets.ts and documented in docs/ART_PIPELINE.md.",
+  },
+  {
     title: "Next Steps",
     body: "Connect the repo to GitHub and Vercel, keep this local UI passing build checks, then add Supabase schema, append-only ledger tables, task lifecycle tables, workers, and real LLM APIs only after cost controls exist.",
   },

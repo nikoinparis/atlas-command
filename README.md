@@ -22,7 +22,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`. The root route redirects to `/dashboard`.
+Open `http://localhost:3000`. The root route redirects to `/base`, the primary village/game view.
 
 ## Build And Lint
 
@@ -44,19 +44,22 @@ npm run build
 - `lib/types/` - Atlas domain types
 - `lib/mock-data/` - local buildings, agents, tasks, approvals, events, and Treasury records
 - `lib/finance/` - ROI and Treasury calculations
+- `lib/game/` - asset registries and future game-facing configuration
 - `lib/agents/` - mock Right-Hand Man responses and registry helpers
 - `docs/` - master plan PDF and implementation notes
+- `public/assets/` - future building, terrain, prop, and agent art
 - `supabase/` - future schema and seed SQL
 
 ## Current Features
 
-- Village-first dashboard at `/dashboard` and `/base`
-- Phaser 3 village canvas with clickable buildings, organic grass variation, curved paths, trees, fences, rocks, bushes, flowers, shadows, and floating labels
+- Village-first game view at `/base`; `/` and `/dashboard` redirect to `/base`
+- Phaser 3 village canvas with clickable asset-ready buildings, organic grass variation, curved paths, trees, fences, rocks, bushes, props, flowers, shadows, and floating labels
+- Building asset registry for future PNG/WebP isometric sprites, with generated fallbacks until art exists
 - Building status glows for idle, working, waiting approval, blocked, error, and upgrading
 - Floating glass top HUD with cash, revenue, expenses, AI spend, active tasks, approvals, risk alerts, and budget usage
-- Floating bottom dock navigation for all primary routes, with horizontal scrolling on narrow screens
+- Floating bottom dock navigation for Base, Buildings, Agents, Tasks, Approvals, Treasury, Settings, and Docs
 - Collapsible left Agent Crew drawer with manager status, current task, model tier, safety policy, and internal roster scrolling
-- Floating right details overlay with internal scrolling for selected agent, selected building, current tasks, completed tasks, bottlenecks, ROI, and recommended action
+- Floating right details overlay that starts closed, supports an empty state, and opens for selected agents/buildings
 - Compact glass event log drawer opened from the village controls
 - Mock chat with Atlas, the Right-Hand Man
 - Standalone routes for buildings, agents, tasks, approvals, Treasury, settings, and docs
@@ -97,6 +100,8 @@ Mock mode remains the default. Leave `NEXT_PUBLIC_DATA_SOURCE` unset or set it t
 ## Master Plan
 
 `docs/Atlas Command Master Plan.pdf` is the canonical product, architecture, safety, and roadmap reference. Future implementation decisions should stay aligned with its guidance on Next.js, Phaser, Treasury, the Right-Hand Man, approval gates, cost controls, Atlas Allocation paper mode, and the cheapest-path roadmap.
+
+`docs/ART_PIPELINE.md` documents the sprite workflow, naming conventions, prompt templates, and how to enable future building art through `lib/game/buildingAssets.ts`.
 
 ## Vercel Deployment Notes
 
