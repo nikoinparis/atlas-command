@@ -6,6 +6,8 @@
 - Run `npm run dev`.
 - Open `http://localhost:3000/dashboard` and inspect the UI.
 - Click each building on the village canvas.
+- Open and close the Crew drawer, Details overlay, and Log drawer.
+- Use the bottom dock to visit every route.
 - Test Atlas chat prompts.
 - Visit `/buildings`, `/agents`, `/tasks`, `/approvals`, `/treasury`, `/settings`, and `/docs`.
 - Run `npm run build`.
@@ -14,16 +16,17 @@
 - Push the repo.
 - Connect the repo to Vercel.
 - Create a Supabase project later.
-- Add the database schema later.
+- Run `supabase/schema.sql` and `supabase/seed.sql` later.
 - Replace mock data with Supabase gradually.
 - Add real LLM chat only after cost controls exist.
 
 ## Next 7 Days
 
+- Preserve the village-first dashboard layout while adding new operational surfaces.
 - Add a Mission Control route for task triage and queue health.
 - Add a global kill switch UI placeholder.
-- Design the Supabase schema from the master plan tables.
-- Add database migrations for buildings, agents, tasks, task_runs, approvals, messages, experiments, cost_events, revenue_events, logs, treasury_records, and atlas_allocation_records.
+- Review and refine the Supabase schema in `supabase/schema.sql`.
+- Convert the schema into migrations when Supabase is connected.
 - Add a server-side mock task API so the UI is ready for real persistence.
 - Add basic E2E smoke tests for dashboard load, building selection, approvals, and Treasury render.
 - Refine Phaser visuals and add better mobile layout behavior.
@@ -43,6 +46,7 @@
 
 - Keep Vercel Hobby while the app is local/mock.
 - Keep Supabase free until daily use requires Pro.
+- Keep `NEXT_PUBLIC_DATA_SOURCE=mock` until the Supabase data-source methods are implemented.
 - Avoid real LLM calls until budgets, per-task caps, retries, and logging exist.
 - Use cheap model tiers for summaries and extraction once live calls start.
 - Keep Atlas Allocation display-only and paper-mode.

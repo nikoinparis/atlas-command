@@ -40,25 +40,29 @@ npm run build
 - `components/panels/` - building, agent, chat, task, approval, treasury, and settings panels
 - `components/cards/` - repeated cards for entities and metrics
 - `components/ui/` - local button, card, badge, tabs, progress, and dialog primitives
+- `lib/data/` - mock-first data-source abstraction with a future Supabase stub
 - `lib/types/` - Atlas domain types
 - `lib/mock-data/` - local buildings, agents, tasks, approvals, events, and Treasury records
 - `lib/finance/` - ROI and Treasury calculations
 - `lib/agents/` - mock Right-Hand Man responses and registry helpers
 - `docs/` - master plan PDF and implementation notes
+- `supabase/` - future schema and seed SQL
 
 ## Current Features
 
-- Full-screen village dashboard at `/dashboard` and `/base`
-- Phaser 3 isometric-style village canvas with clickable buildings
+- Village-first dashboard at `/dashboard` and `/base`
+- Phaser 3 isometric-style village canvas with clickable buildings, paths, trees, scenery, shadows, and floating labels
 - Building status glows for idle, working, waiting approval, blocked, error, and upgrading
-- Top HUD with cash, revenue, expenses, AI spend, active tasks, approvals, risk alerts, and budget usage
-- Agent roster with manager status, current task, model tier, and safety policy
-- Right panel for selected agent, selected building, current tasks, completed tasks, bottlenecks, ROI, and recommended action
+- Compact game-style top HUD with cash, revenue, expenses, AI spend, active tasks, approvals, risk alerts, and budget usage
+- Bottom dock navigation for all primary routes
+- Collapsible left Agent Crew drawer with manager status, current task, model tier, and safety policy
+- Floating right details overlay for selected agent, selected building, current tasks, completed tasks, bottlenecks, ROI, and recommended action
+- Compact event log drawer opened from the village controls
 - Mock chat with Atlas, the Right-Hand Man
-- Event log / task feed
 - Standalone routes for buildings, agents, tasks, approvals, Treasury, settings, and docs
 - Approval cards with local approve, reject, and request revision state
 - Treasury dashboard with cost events, revenue events, ROI, AI usage log, budget controls, and Atlas Allocation paper-mode placeholder
+- Supabase schema, seed, setup docs, `.env.example`, and mock-first data-source abstraction
 
 ## Mock vs Real Systems
 
@@ -79,6 +83,8 @@ Future real systems:
 - LLM API routing through a cost governor
 - Stripe/Etsy/Fiverr/social/brokerage connectors only after approval gates exist
 
+Mock mode remains the default. Leave `NEXT_PUBLIC_DATA_SOURCE` unset or set it to `mock`. The Supabase data source is a placeholder and should not be enabled until server-side data access, RLS, and durable approval gates exist.
+
 ## Safety Rules
 
 - The browser never receives model, brokerage, payment, or posting API keys.
@@ -95,6 +101,8 @@ Future real systems:
 ## Vercel Deployment Notes
 
 The app should deploy as a standard Next.js project. No environment variables are required for this mock build. Add Supabase and LLM environment variables later only after server-side APIs, cost controls, and approval gates are implemented.
+
+See `docs/SUPABASE_SETUP.md` for the future database setup path.
 
 ## Future Integrations
 

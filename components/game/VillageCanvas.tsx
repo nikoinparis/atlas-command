@@ -5,17 +5,22 @@ import type Phaser from "phaser";
 import { createVillageScene } from "@/components/phaser/VillageScene";
 import type { VillageSceneApi } from "@/components/phaser/gameTypes";
 import type { Building } from "@/lib/types/atlas";
+import { cn } from "@/lib/utils/cn";
 
 interface VillageCanvasProps {
   buildings: Building[];
   selectedBuildingId: string;
   onSelectBuilding: (buildingId: string) => void;
+  className?: string;
+  variant?: "framed" | "immersive";
 }
 
 export function VillageCanvas({
   buildings,
   selectedBuildingId,
   onSelectBuilding,
+  className,
+  variant = "framed",
 }: VillageCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -55,7 +60,7 @@ export function VillageCanvas({
         parent: container,
         width: Math.max(container.clientWidth, 720),
         height: Math.max(container.clientHeight, 520),
-        backgroundColor: "#07111b",
+        backgroundColor: "#102115",
         antialias: true,
         scale: {
           mode: PhaserLib.Scale.RESIZE,
@@ -71,8 +76,8 @@ export function VillageCanvas({
         }
 
         game.scale.resize(
-          Math.max(containerRef.current.clientWidth, 720),
-          Math.max(containerRef.current.clientHeight, 520),
+          Math.max(containerRef.current.clientWidth, 760),
+          Math.max(containerRef.current.clientHeight, 540),
         );
         sceneRef.current?.relayout();
       });
@@ -95,18 +100,15 @@ export function VillageCanvas({
   }, [selectedBuildingId]);
 
   return (
-    <div className="relative h-full min-h-[420px] overflow-hidden rounded-lg border border-white/10 bg-[#07111b] shadow-[inset_0_0_80px_rgba(8,47,73,0.38)] xl:min-h-0">
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between p-4">
-        <div className="rounded-md border border-white/10 bg-black/35 px-3 py-2 backdrop-blur-md">
-          <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-cyan-200/80">
-            Village Canvas
-          </div>
-          <div className="text-xs text-zinc-400">Phaser 3 · isometric mock map</div>
-        </div>
-        <div className="rounded-md border border-amber-300/20 bg-amber-300/[0.08] px-3 py-2 text-xs text-amber-100 backdrop-blur-md">
-          All external actions route to Approval Court
-        </div>
-      </div>
+    <div
+      className={cn(
+        "relative h-full min-h-[420px] overflow-hidden bg-[#102115] xl:min-h-0",
+        variant === "framed" &&
+          "rounded-lg border border-white/10 shadow-[inset_0_0_80px_rgba(8,47,73,0.38)]",
+        variant === "immersive" && "shadow-[inset_0_0_140px_rgba(0,0,0,0.42)]",
+        className,
+      )}
+    >
       <div className="h-full w-full" ref={containerRef} />
     </div>
   );

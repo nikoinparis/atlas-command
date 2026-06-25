@@ -57,3 +57,41 @@ The master plan says Atlas should be wrapped later as a separate Python service 
 ### Master Plan Link
 
 Aligned with Part VI and Part VIII.
+
+## 2026-06-25
+
+### Decision
+
+Move the main dashboard and base routes toward a village-first game layout.
+
+### Why
+
+The master plan says the game layer is the core interface, not a dashboard skin. The village should dominate the screen, with HUD, crew, details, and events summoned as overlays.
+
+### Alternatives Considered
+
+- Keep the three-column dashboard: stable but too corporate and visually secondary.
+- Build a separate new route: rejected because `/dashboard` and `/base` should be the primary village experience.
+
+### Master Plan Link
+
+Aligned with Part I and Part II.
+
+## 2026-06-25
+
+### Decision
+
+Add Supabase schema, seed SQL, setup docs, env example, and a mock-first data-source abstraction while keeping mock mode as the default.
+
+### Why
+
+The project needs a realistic persistence runway, but the current pass must not require credentials or destabilize the working local app.
+
+### Alternatives Considered
+
+- Wire Supabase immediately: rejected because credentials, RLS, and server-side data access are not ready.
+- Leave persistence for later: rejected because the master plan calls for a durable data model and ledger spine.
+
+### Master Plan Link
+
+Aligned with Part II, Part VI, Part VII, and Part XI.

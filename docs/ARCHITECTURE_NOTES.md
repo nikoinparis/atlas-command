@@ -2,11 +2,22 @@
 
 ## Current Local Mock Architecture
 
-The app uses static mock data under `lib/mock-data/` and strong domain types under `lib/types/atlas.ts`. React renders the shell, HUD, side panels, task board, Approval Court, Treasury dashboard, settings, and docs. Phaser renders only the village canvas and emits building selection events back to React.
+The app uses static mock data under `lib/mock-data/` and strong domain types under `lib/types/atlas.ts`. `lib/data/` now exposes a mock-first data-source abstraction plus a Supabase placeholder, but the runtime still imports mock data directly where that keeps the UI simple and stable.
+
+React renders the shell, HUD, bottom dock, drawers, overlays, task board, Approval Court, Treasury dashboard, settings, and docs. Phaser renders only the village canvas and emits building selection events back to React.
+
+The dashboard/base routes now use a village-first layout:
+
+- compact top HUD,
+- full-screen Phaser village,
+- bottom dock navigation,
+- collapsible left Agent Crew drawer,
+- floating right selected-building/agent details overlay,
+- compact event log drawer.
 
 ## Future Supabase Architecture
 
-Move mock records into Supabase Postgres tables aligned with the master plan:
+Move mock records into Supabase Postgres tables aligned with the master plan. Initial SQL lives in `supabase/schema.sql` and sample rows live in `supabase/seed.sql`.
 
 - users
 - buildings
@@ -29,6 +40,8 @@ Move mock records into Supabase Postgres tables aligned with the master plan:
 
 Financial and audit data should be append-only where possible.
 
+Mock mode remains default through `NEXT_PUBLIC_DATA_SOURCE=mock` or an unset data-source flag. The Supabase data source should stay a stub until credentials, server-side access, row-level security, and durable approval gates are implemented.
+
 ## Future Worker / Queue Architecture
 
 The UI should create task rows through server-side APIs. A Python worker should consume queued tasks, run LangGraph workflows behind a cost governor, write task run state and cost events, and pause side-effecting work at durable approval checkpoints.
@@ -48,8 +61,10 @@ Do not call model APIs from the browser. Add a server-side model router that cho
 
 Phaser owns:
 
-- isometric tiles
+- isometric grass/ground tiles
+- paths, trees, rocks, fences, shadows, and placeholder scenery
 - building shapes
+- floating building labels
 - status glows
 - hover and click hit testing
 - simple agent markers and animations
