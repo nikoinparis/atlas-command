@@ -67,40 +67,60 @@ export function createVillageScene(
     private drawBackground() {
       const { width, height } = this.scale;
       const graphics = this.add.graphics();
-      graphics.fillGradientStyle(0x213d25, 0x244729, 0x17321f, 0x112319, 1);
+      graphics.fillGradientStyle(0x274b2b, 0x2c5932, 0x183920, 0x102719, 1);
       graphics.fillRect(0, 0, width, height);
-      graphics.fillStyle(0x0b1712, 0.22);
-      graphics.fillRect(0, 0, width, 86);
-      graphics.fillStyle(0x0b1712, 0.26);
-      graphics.fillRect(0, height - 92, width, 92);
+      graphics.fillStyle(0x0b1712, 0.08);
+      graphics.fillRect(0, 0, width, 96);
+      graphics.fillStyle(0x0b1712, 0.1);
+      graphics.fillRect(0, height - 104, width, 104);
 
       this.tileGroup?.add(graphics);
     }
 
     private drawTiles() {
       const { width, height } = this.scale;
-      const originX = width / 2;
-      const originY = height / 2 + 18;
-      const tileW = 86;
-      const tileH = 43;
+      const graphics = this.add.graphics();
+      const meadowPatches = [
+        { x: -380, y: -214, width: 280, height: 128, color: 0x315f34, alpha: 0.44 },
+        { x: 338, y: -188, width: 318, height: 146, color: 0x376b38, alpha: 0.38 },
+        { x: -424, y: 198, width: 352, height: 168, color: 0x2e6134, alpha: 0.46 },
+        { x: 370, y: 224, width: 336, height: 176, color: 0x335f31, alpha: 0.44 },
+        { x: 4, y: 268, width: 450, height: 164, color: 0x2f6738, alpha: 0.34 },
+      ];
 
-      for (let gx = -8; gx <= 8; gx += 1) {
-        for (let gy = -7; gy <= 7; gy += 1) {
-          const x = originX + (gx - gy) * (tileW / 2);
-          const y = originY + (gx + gy) * (tileH / 2);
-          const meadow = (gx * 17 + gy * 23) % 5 === 0;
-          const shade = (gx + gy) % 2 === 0 ? 0x234b2a : 0x1f4227;
-          const tile = this.add.polygon(
-            x,
-            y,
-            [0, -tileH / 2, tileW / 2, 0, 0, tileH / 2, -tileW / 2, 0],
-            meadow ? 0x2f6133 : shade,
-            0.9,
-          );
-          tile.setStrokeStyle(1, 0xd8f1b8, 0.05);
-          this.tileGroup?.add(tile);
-        }
+      meadowPatches.forEach((patch) => {
+        const point = this.toScreen(patch.x, patch.y);
+        graphics.fillStyle(patch.color, patch.alpha);
+        graphics.fillEllipse(point.x, point.y, patch.width, patch.height);
+      });
+
+      for (let index = 0; index < 150; index += 1) {
+        const x = ((index * 173) % Math.max(1, Math.round(width + 280))) - 140;
+        const y = ((index * 97) % Math.max(1, Math.round(height + 220))) - 86;
+        const color = [0x2b5a31, 0x356f3a, 0x244c2b, 0x416f38, 0x2d6336][index % 5];
+        const alpha = 0.16 + (index % 4) * 0.04;
+        const patchWidth = 18 + (index % 7) * 7;
+        const patchHeight = 7 + (index % 5) * 4;
+
+        graphics.fillStyle(color, alpha);
+        graphics.fillEllipse(x, y, patchWidth, patchHeight);
       }
+
+      for (let index = 0; index < 120; index += 1) {
+        const x = ((index * 151) % Math.max(1, Math.round(width + 220))) - 110;
+        const y = ((index * 71) % Math.max(1, Math.round(height + 180))) - 62;
+        const tuftColor = index % 3 === 0 ? 0x86b568 : 0x5e914c;
+
+        graphics.lineStyle(1, tuftColor, 0.24);
+        graphics.beginPath();
+        graphics.moveTo(x, y);
+        graphics.lineTo(x - 4, y + 9);
+        graphics.moveTo(x, y);
+        graphics.lineTo(x + 3, y + 10);
+        graphics.strokePath();
+      }
+
+      this.tileGroup?.add(graphics);
     }
 
     private drawPaths() {
@@ -116,14 +136,16 @@ export function createVillageScene(
       const branchB = [this.toScreen(0, -6), this.toScreen(18, 100), this.toScreen(162, 220)];
       const branchC = [this.toScreen(-180, 86), this.toScreen(-150, 220)];
 
-      this.strokePath(graphics, pathPoints, 42, 0xefe0ad, 0.86);
-      this.strokePath(graphics, pathPoints, 30, 0xcaa976, 0.48);
+      this.strokePath(graphics, pathPoints, 48, 0x6d5934, 0.16, 9);
+      this.strokePath(graphics, pathPoints, 42, 0xefe0ad, 0.82, 9);
+      this.strokePath(graphics, pathPoints, 28, 0xcaa976, 0.42, 9);
       [branchA, branchB, branchC].forEach((branch) => {
-        this.strokePath(graphics, branch, 30, 0xefe0ad, 0.78);
-        this.strokePath(graphics, branch, 20, 0xcaa976, 0.42);
+        this.strokePath(graphics, branch, 34, 0x6d5934, 0.13, 7);
+        this.strokePath(graphics, branch, 30, 0xefe0ad, 0.72, 7);
+        this.strokePath(graphics, branch, 19, 0xcaa976, 0.38, 7);
       });
 
-      graphics.fillStyle(0x866a43, 0.34);
+      graphics.fillStyle(0x866a43, 0.28);
       [
         this.toScreen(-260, 150),
         this.toScreen(-84, 56),
@@ -142,11 +164,20 @@ export function createVillageScene(
       width: number,
       color: number,
       alpha: number,
+      wobble = 0,
     ) {
       graphics.lineStyle(width, color, alpha);
       graphics.beginPath();
       graphics.moveTo(points[0].x, points[0].y);
-      points.slice(1).forEach((point) => graphics.lineTo(point.x, point.y));
+      points.slice(1).forEach((point, index) => {
+        const previous = points[index];
+        const midpointX = (previous.x + point.x) / 2;
+        const midpointY = (previous.y + point.y) / 2;
+        const offset = (index % 2 === 0 ? wobble : -wobble) + (point.x > previous.x ? 3 : -3);
+
+        graphics.lineTo(midpointX + offset, midpointY - wobble / 2);
+        graphics.lineTo(point.x, point.y);
+      });
       graphics.strokePath();
     }
 
@@ -188,6 +219,30 @@ export function createVillageScene(
         [358, -18],
         [58, -18],
       ].forEach(([x, y]) => this.drawRock(x, y));
+
+      [
+        [-336, -52],
+        [-288, -88],
+        [-220, 166],
+        [-92, -158],
+        [128, -146],
+        [218, -72],
+        [294, 128],
+        [172, 188],
+        [18, 238],
+        [398, 28],
+      ].forEach(([x, y], index) => this.drawBush(x, y, index % 4));
+
+      [
+        [-176, 138],
+        [-124, 104],
+        [54, 82],
+        [118, 54],
+        [244, 104],
+        [-34, -98],
+        [174, -126],
+        [-294, 74],
+      ].forEach(([x, y], index) => this.drawFlowerClump(x, y, index));
     }
 
     private drawBuildings() {
@@ -388,6 +443,41 @@ export function createVillageScene(
       rock.setStrokeStyle(1, 0x38443b, 0.45);
       rock.setDepth(point.y + 12);
       this.tileGroup?.add(rock);
+    }
+
+    private drawBush(x: number, y: number, variant: number) {
+      const point = this.toScreen(x, y);
+      const shadow = this.add.ellipse(point.x + 4, point.y + 10, 44, 12, 0x07100b, 0.18);
+      const leafA = this.add.circle(point.x - 12, point.y + 2, 13 + variant, 0x376f38, 0.88);
+      const leafB = this.add.circle(point.x + 2, point.y - 4, 16, variant % 2 === 0 ? 0x4f8a46 : 0x5f9d4e, 0.88);
+      const leafC = this.add.circle(point.x + 15, point.y + 4, 12, 0x2f6839, 0.86);
+
+      [shadow, leafA, leafB, leafC].forEach((item) => {
+        item.setDepth(point.y + 14);
+        this.tileGroup?.add(item);
+      });
+    }
+
+    private drawFlowerClump(x: number, y: number, variant: number) {
+      const point = this.toScreen(x, y);
+      const graphics = this.add.graphics();
+      const colors = [0xfde68a, 0xf9a8d4, 0x93c5fd, 0xfca5a5];
+
+      for (let index = 0; index < 5; index += 1) {
+        const flowerX = point.x + index * 7 - 14;
+        const flowerY = point.y + ((index * 5 + variant) % 9) - 4;
+
+        graphics.lineStyle(1, 0x74a15a, 0.45);
+        graphics.beginPath();
+        graphics.moveTo(flowerX, flowerY + 9);
+        graphics.lineTo(flowerX + (index % 2 === 0 ? 2 : -2), flowerY + 1);
+        graphics.strokePath();
+        graphics.fillStyle(colors[(index + variant) % colors.length], 0.62);
+        graphics.fillCircle(flowerX, flowerY, 2);
+      }
+
+      graphics.setDepth(point.y + 10);
+      this.tileGroup?.add(graphics);
     }
 
     private getBuildingLabel(buildingId: string, fallback: string) {

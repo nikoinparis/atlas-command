@@ -15,6 +15,8 @@ The dashboard/base routes now use a village-first layout:
 - floating right selected-building/agent details overlay,
 - compact event log drawer.
 
+The HUD, drawers, details panel, event log, and dock should behave as floating glass overlays over the Phaser map. Side overlays share a bounded top and bottom rhythm, scroll internally, and stop above the bottom dock so the village remains visible and interactive.
+
 ## Future Supabase Architecture
 
 Move mock records into Supabase Postgres tables aligned with the master plan. Initial SQL lives in `supabase/schema.sql` and sample rows live in `supabase/seed.sql`.
@@ -61,8 +63,8 @@ Do not call model APIs from the browser. Add a server-side model router that cho
 
 Phaser owns:
 
-- isometric grass/ground tiles
-- paths, trees, rocks, fences, shadows, and placeholder scenery
+- organic grass/ground variation without a visible tile grid
+- paths, trees, rocks, fences, bushes, flowers, shadows, and placeholder scenery
 - building shapes
 - floating building labels
 - status glows

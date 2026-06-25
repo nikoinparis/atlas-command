@@ -7,6 +7,9 @@
 - Open `http://localhost:3000/dashboard` and inspect the UI.
 - Click each building on the village canvas.
 - Open and close the Crew drawer, Details overlay, and Log drawer.
+- Confirm the village reads as organic terrain rather than a visible grid, with the map filling the screen behind the overlays.
+- Confirm the Crew drawer, Details panel, Log drawer, and bottom dock float above the village without covering each other.
+- Confirm the Crew roster and Details panel scroll internally and stop above the bottom dock.
 - Use the bottom dock to visit every route.
 - Test Atlas chat prompts.
 - Visit `/buildings`, `/agents`, `/tasks`, `/approvals`, `/treasury`, `/settings`, and `/docs`.

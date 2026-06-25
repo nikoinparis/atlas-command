@@ -51,13 +51,13 @@ npm run build
 ## Current Features
 
 - Village-first dashboard at `/dashboard` and `/base`
-- Phaser 3 isometric-style village canvas with clickable buildings, paths, trees, scenery, shadows, and floating labels
+- Phaser 3 village canvas with clickable buildings, organic grass variation, curved paths, trees, fences, rocks, bushes, flowers, shadows, and floating labels
 - Building status glows for idle, working, waiting approval, blocked, error, and upgrading
-- Compact game-style top HUD with cash, revenue, expenses, AI spend, active tasks, approvals, risk alerts, and budget usage
-- Bottom dock navigation for all primary routes
-- Collapsible left Agent Crew drawer with manager status, current task, model tier, and safety policy
-- Floating right details overlay for selected agent, selected building, current tasks, completed tasks, bottlenecks, ROI, and recommended action
-- Compact event log drawer opened from the village controls
+- Floating glass top HUD with cash, revenue, expenses, AI spend, active tasks, approvals, risk alerts, and budget usage
+- Floating bottom dock navigation for all primary routes, with horizontal scrolling on narrow screens
+- Collapsible left Agent Crew drawer with manager status, current task, model tier, safety policy, and internal roster scrolling
+- Floating right details overlay with internal scrolling for selected agent, selected building, current tasks, completed tasks, bottlenecks, ROI, and recommended action
+- Compact glass event log drawer opened from the village controls
 - Mock chat with Atlas, the Right-Hand Man
 - Standalone routes for buildings, agents, tasks, approvals, Treasury, settings, and docs
 - Approval cards with local approve, reject, and request revision state

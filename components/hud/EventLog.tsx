@@ -1,14 +1,16 @@
+import type { HTMLAttributes } from "react";
 import { ScrollText } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { agents, buildings, events } from "@/lib/mock-data";
+import { cn } from "@/lib/utils/cn";
 import { riskTone } from "@/lib/utils/format";
 
-export function EventLog() {
+export function EventLog({ className }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <Card className="p-4">
+    <Card className={cn("p-4", className)}>
       <CardHeader eyebrow="Feed" title="Village Event Log" action={<ScrollText className="text-cyan-200" size={17} />} />
-      <CardBody className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+      <CardBody className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-2">
         {events.slice(0, 8).map((event) => {
           const building = buildings.find((item) => item.id === event.buildingId);
           const agent = agents.find((item) => item.id === event.agentId);

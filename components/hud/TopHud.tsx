@@ -26,25 +26,25 @@ export function TopHud() {
   ] as const;
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-zinc-950/70 px-3 py-2 shadow-[0_12px_50px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[1800px] flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
+    <header className="fixed inset-x-3 top-3 z-40 rounded-xl border border-white/10 bg-zinc-950/50 px-3 py-2 shadow-[0_12px_50px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
+      <div className="mx-auto flex h-[54px] max-w-[1800px] items-center gap-3">
+        <div className="flex min-w-[154px] items-center gap-3">
           <div className="grid h-10 w-10 place-items-center rounded-lg border border-cyan-300/25 bg-cyan-300/10 text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)]">
             <Sparkles size={18} />
           </div>
           <div className="min-w-0">
-            <h1 className="truncate text-base font-semibold tracking-wide text-white">Atlas Command</h1>
+            <h1 className="truncate text-base font-semibold tracking-normal text-white">Atlas Command</h1>
             <p className="truncate text-[11px] text-zinc-400">Day 1 · mock village · approval-gated</p>
           </div>
         </div>
-        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 lg:justify-center lg:pb-0">
+        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
           {stats.map((stat) => {
             const Icon = stat.icon;
 
             return (
               <div
                 className={cn(
-                  "flex h-11 shrink-0 items-center gap-2 rounded-lg border bg-black/25 px-3",
+                  "flex h-10 shrink-0 items-center gap-2 rounded-lg border bg-black/20 px-3",
                   stat.tone === "cyan" && "border-cyan-300/25 text-cyan-100",
                   stat.tone === "emerald" && "border-emerald-300/25 text-emerald-100",
                   stat.tone === "amber" && "border-amber-300/25 text-amber-100",
@@ -55,7 +55,7 @@ export function TopHud() {
               >
                 <Icon className="shrink-0 opacity-80" size={14} />
                 <div>
-                  <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-zinc-500">
+                  <div className="font-mono text-[9px] uppercase tracking-normal text-zinc-500">
                     {stat.label}
                   </div>
                   <div className="font-mono text-sm font-semibold text-white">{stat.value}</div>
@@ -64,7 +64,7 @@ export function TopHud() {
             );
           })}
         </div>
-        <div className="min-w-[190px]">
+        <div className="hidden min-w-[190px] lg:block">
           <BudgetBar record={treasuryRecord} />
           <div className="mt-1 text-right text-[10px] text-zinc-500">
             {profit >= 0 ? "positive MTD" : "early loss visible"}

@@ -31,8 +31,8 @@ export function BottomDock() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-3 z-40 mx-auto w-[min(calc(100%-1.5rem),980px)] rounded-xl border border-white/15 bg-zinc-950/80 p-2 shadow-[0_18px_70px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-      <div className="grid grid-cols-5 gap-1 md:grid-cols-9">
+    <nav className="fixed inset-x-3 bottom-4 z-40 mx-auto w-[min(calc(100%-1.5rem),980px)] overflow-x-auto rounded-xl border border-white/[0.12] bg-zinc-950/[0.58] p-2 shadow-[0_18px_70px_rgba(0,0,0,0.42)] backdrop-blur-2xl">
+      <div className="flex min-w-max gap-1 md:grid md:min-w-0 md:grid-cols-9">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href || (item.href === "/dashboard" && pathname === "/");
@@ -40,7 +40,7 @@ export function BottomDock() {
           return (
             <Link
               className={cn(
-                "group flex h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-medium text-zinc-400 transition hover:bg-white/[0.07] hover:text-white md:h-12",
+                "group flex h-11 w-20 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-medium text-zinc-400 transition hover:bg-white/[0.07] hover:text-white md:h-12 md:w-auto",
                 active &&
                   "bg-cyan-300/[0.12] text-cyan-50 shadow-[inset_0_0_0_1px_rgba(103,232,249,0.25)]",
               )}

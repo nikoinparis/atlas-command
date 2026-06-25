@@ -81,6 +81,25 @@ Aligned with Part I and Part II.
 
 ### Decision
 
+Polish the village-first shell so the map reads as organic terrain and the React UI reads as floating glass overlays.
+
+### Why
+
+The master plan treats the game layer as the main interface. The first Phaser pass worked functionally, but the visible diamond grid and solid panel blocks made the experience feel more like a board than a lived-in command village.
+
+### Alternatives Considered
+
+- Keep the tile grid and focus on data features: rejected because the village is the primary product surface.
+- Move all overlays into Phaser: rejected because React should continue owning HUD, panels, chat, routes, and scroll behavior.
+
+### Master Plan Link
+
+Aligned with Part I and Part II.
+
+## 2026-06-25
+
+### Decision
+
 Add Supabase schema, seed SQL, setup docs, env example, and a mock-first data-source abstraction while keeping mock mode as the default.
 
 ### Why
