@@ -10,6 +10,17 @@ import {
 
 const SHOW_BUILDING_CLICK_ZONES = false;
 
+// Slight zoom so the village composition feels fuller without cropping buildings.
+const VILLAGE_ZOOM = 1.12;
+// Extra background drawn beyond the viewport so zoom + edge-pan never expose empty canvas.
+const BACKGROUND_OVERSCAN = 96;
+// Edge-pan tuning: how close (px) the cursor must get to a screen edge before the camera drifts.
+const EDGE_PAN_THRESHOLD = 52;
+// Largest distance (px) the camera can drift from its resting position in any direction.
+const EDGE_PAN_MAX_DISTANCE = 38;
+// How quickly the camera eases toward its target each frame (0-1 per ~16ms); kept low for a gentle drift.
+const EDGE_PAN_EASE = 0.045;
+
 type PhaserRuntime = typeof Phaser;
 
 interface BuildingNode {
@@ -31,6 +42,10 @@ export function createVillageScene(
     private agentGroup?: Phaser.GameObjects.Group;
     private failedAssetKeys = new Set<string>();
     private isReady = false;
+    private originScrollX = 0;
+    private originScrollY = 0;
+    private pointerInsideCanvas = false;
+    private detachPointerListeners?: () => void;
 
     constructor() {
       super({ key: "VillageScene" });
@@ -49,9 +64,87 @@ export function createVillageScene(
     }
 
     create() {
-      this.cameras.main.setBackgroundColor("#102115");
+      const camera = this.cameras.main;
+      camera.setBackgroundColor("#102115");
+      camera.setZoom(VILLAGE_ZOOM);
+      this.originScrollX = camera.scrollX;
+      this.originScrollY = camera.scrollY;
+      this.setupEdgePanTracking();
       this.isReady = true;
       this.drawScene();
+    }
+
+    private setupEdgePanTracking() {
+      const canvas = this.game.canvas;
+      if (!canvas) {
+        return;
+      }
+
+      const handleEnter = () => {
+        this.pointerInsideCanvas = true;
+      };
+      const handleLeave = () => {
+        this.pointerInsideCanvas = false;
+      };
+
+      canvas.addEventListener("mouseenter", handleEnter);
+      canvas.addEventListener("mouseleave", handleLeave);
+      this.detachPointerListeners = () => {
+        canvas.removeEventListener("mouseenter", handleEnter);
+        canvas.removeEventListener("mouseleave", handleLeave);
+      };
+      this.events.once("shutdown", () => this.detachPointerListeners?.());
+      this.events.once("destroy", () => this.detachPointerListeners?.());
+    }
+
+    update() {
+      if (!this.isReady) {
+        return;
+      }
+
+      const camera = this.cameras.main;
+      const { width, height } = this.scale;
+      const pointer = this.input.activePointer;
+
+      // Resolve where the camera *wants* to be based on cursor proximity to each edge.
+      let targetScrollX = this.originScrollX;
+      let targetScrollY = this.originScrollY;
+
+      const cursorInBounds =
+        pointer.x >= 0 && pointer.x <= width && pointer.y >= 0 && pointer.y <= height;
+
+      // Only drift while the cursor is actually over the canvas (so open UI panels/drawers,
+      // which sit above the canvas, naturally suppress the movement).
+      if (this.pointerInsideCanvas && cursorInBounds) {
+        if (pointer.x < EDGE_PAN_THRESHOLD) {
+          targetScrollX -= ((EDGE_PAN_THRESHOLD - pointer.x) / EDGE_PAN_THRESHOLD) * EDGE_PAN_MAX_DISTANCE;
+        } else if (pointer.x > width - EDGE_PAN_THRESHOLD) {
+          targetScrollX +=
+            ((pointer.x - (width - EDGE_PAN_THRESHOLD)) / EDGE_PAN_THRESHOLD) * EDGE_PAN_MAX_DISTANCE;
+        }
+
+        if (pointer.y < EDGE_PAN_THRESHOLD) {
+          targetScrollY -= ((EDGE_PAN_THRESHOLD - pointer.y) / EDGE_PAN_THRESHOLD) * EDGE_PAN_MAX_DISTANCE;
+        } else if (pointer.y > height - EDGE_PAN_THRESHOLD) {
+          targetScrollY +=
+            ((pointer.y - (height - EDGE_PAN_THRESHOLD)) / EDGE_PAN_THRESHOLD) * EDGE_PAN_MAX_DISTANCE;
+        }
+      }
+
+      // Clamp so the camera can never drift further than the allowed distance from rest.
+      targetScrollX = PhaserLib.Math.Clamp(
+        targetScrollX,
+        this.originScrollX - EDGE_PAN_MAX_DISTANCE,
+        this.originScrollX + EDGE_PAN_MAX_DISTANCE,
+      );
+      targetScrollY = PhaserLib.Math.Clamp(
+        targetScrollY,
+        this.originScrollY - EDGE_PAN_MAX_DISTANCE,
+        this.originScrollY + EDGE_PAN_MAX_DISTANCE,
+      );
+
+      camera.scrollX += (targetScrollX - camera.scrollX) * EDGE_PAN_EASE;
+      camera.scrollY += (targetScrollY - camera.scrollY) * EDGE_PAN_EASE;
     }
 
     relayout() {
@@ -88,12 +181,14 @@ export function createVillageScene(
     private drawBackground() {
       const { width, height } = this.scale;
       const graphics = this.add.graphics();
+      // Overscan the background so the slight zoom + edge-pan never reveal empty canvas.
+      const margin = BACKGROUND_OVERSCAN;
       graphics.fillGradientStyle(0x274b2b, 0x2c5932, 0x183920, 0x102719, 1);
-      graphics.fillRect(0, 0, width, height);
+      graphics.fillRect(-margin, -margin, width + margin * 2, height + margin * 2);
       graphics.fillStyle(0x0b1712, 0.08);
-      graphics.fillRect(0, 0, width, 96);
+      graphics.fillRect(-margin, -margin, width + margin * 2, 96 + margin);
       graphics.fillStyle(0x0b1712, 0.1);
-      graphics.fillRect(0, height - 104, width, 104);
+      graphics.fillRect(-margin, height - 104, width + margin * 2, 104 + margin);
 
       this.tileGroup?.add(graphics);
     }
@@ -153,11 +248,25 @@ export function createVillageScene(
         this.toScreen(178, -8),
         this.toScreen(320, 88),
       ];
-      const branchA = [this.toScreen(0, -6), this.toScreen(0, -120)];
+      const branchA = [this.toScreen(0, -6), this.toScreen(-18, -124)];
       const branchB = [this.toScreen(0, -6), this.toScreen(18, 100), this.toScreen(162, 220)];
       const branchC = [this.toScreen(-180, 86), this.toScreen(-150, 220)];
       const branchD = [this.toScreen(178, -8), this.toScreen(248, -82), this.toScreen(330, -116)];
       const branchE = [this.toScreen(-180, 86), this.toScreen(-272, 34), this.toScreen(-356, -34)];
+
+      // Short stub paths connecting each building's base back to the nearest road so
+      // every building reads as "on the path network" rather than dropped at random.
+      const connectors = [
+        [this.toScreen(-40, -126), this.toScreen(-12, -116)], // HQ -> branchA
+        [this.toScreen(78, 18), this.toScreen(24, -4)], // Court -> main road
+        [this.toScreen(-244, -8), this.toScreen(-260, 30)], // Treasury -> branchE
+        [this.toScreen(238, -38), this.toScreen(206, 6)], // Studio -> main road
+        [this.toScreen(338, 86), this.toScreen(312, 88)], // Engineering -> main road end
+        [this.toScreen(-314, 134), this.toScreen(-296, 166)], // Guild -> main road start
+        [this.toScreen(-188, 228), this.toScreen(-152, 222)], // Library -> branchC
+        [this.toScreen(224, 224), this.toScreen(170, 222)], // Atlas Tower -> branchB
+        [this.toScreen(-62, 124), this.toScreen(8, 104)], // Workshop -> branchB
+      ];
 
       this.strokePath(graphics, pathPoints, 48, 0x6d5934, 0.16, 9);
       this.strokePath(graphics, pathPoints, 42, 0xefe0ad, 0.82, 9);
@@ -166,6 +275,11 @@ export function createVillageScene(
         this.strokePath(graphics, branch, 34, 0x6d5934, 0.13, 7);
         this.strokePath(graphics, branch, 30, 0xefe0ad, 0.72, 7);
         this.strokePath(graphics, branch, 19, 0xcaa976, 0.38, 7);
+      });
+      connectors.forEach((connector) => {
+        this.strokePath(graphics, connector, 26, 0x6d5934, 0.12, 5);
+        this.strokePath(graphics, connector, 22, 0xefe0ad, 0.66, 5);
+        this.strokePath(graphics, connector, 13, 0xcaa976, 0.34, 5);
       });
 
       graphics.fillStyle(0x866a43, 0.28);
