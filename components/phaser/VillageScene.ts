@@ -18,8 +18,14 @@ const GRID_ROW_H = 134; // vertical spacing between the building rows
 const GRID_ORIGIN_X = 0; // world-space origin offset for the grid
 const GRID_ORIGIN_Y = -108; // world y of row 0 (top row); rows fall at -108, 26, 160
 // Road network lives strictly in the gaps between building rows so it never crosses a lot.
-const ROAD_GAP_Y_TOP = -22; // avenue between the top row and the middle row
-const ROAD_GAP_Y_BOTTOM = 112; // avenue between the middle row and the bottom row
+const ROAD_GAP_Y_TOP = -84; // avenue between the top row and the middle row
+const ROAD_GAP_Y_BOTTOM = 46; // avenue between the middle row and the bottom row
+// The building PNGs carry transparent padding below their art, so the *visible* base of each
+// sprite sits well above the sprite frame's bottom. This is the container-space y (relative to
+// the sprite origin) where the visible base actually meets the ground; lots, status text, the
+// selection highlight, and the road connectors are all anchored to it so buildings sit planted
+// on their lots instead of hovering above them.
+const SPRITE_BASE_OFFSET = -0.2; // fraction of sprite height, measured up from the origin
 
 // Slight zoom so the composition feels full without cropping buildings or hiding labels.
 const VILLAGE_ZOOM = 1.04;
@@ -286,7 +292,7 @@ export function createVillageScene(
       options.buildings.forEach((building) => {
         const asset = getBuildingAsset(building.id);
         const world = this.gridToWorld(asset.gridCol, asset.gridRow);
-        const groundY = world.y + (1 - asset.anchor.y) * asset.height;
+        const groundY = world.y + this.baseLineY(asset);
         const lotBottom = groundY + asset.lotHeight / 2;
         const lotTop = groundY - asset.lotHeight / 2;
         if (asset.gridRow <= 0) {
@@ -309,7 +315,7 @@ export function createVillageScene(
       options.buildings.forEach((building) => {
         const asset = getBuildingAsset(building.id);
         const { x, y } = this.gridToScreen(asset.gridCol, asset.gridRow);
-        const groundY = y + (1 - asset.anchor.y) * asset.height; // the building's base line
+        const groundY = y + this.baseLineY(asset); // the building's visible base line
         this.fillIsoDiamond(graphics, x, groundY, asset.lotWidth + 28, asset.lotHeight + 16, 0x335c34, 0.38);
         this.fillIsoDiamond(graphics, x, groundY, asset.lotWidth + 10, asset.lotHeight + 6, 0x4f6a3d, 0.44);
         this.fillIsoDiamond(graphics, x, groundY, asset.lotWidth, asset.lotHeight, 0x70603f, 0.72);
@@ -441,9 +447,10 @@ export function createVillageScene(
         const accent = categoryAccent[building.category] ?? 0xffffff;
         const labelText = this.getBuildingLabel(building.id, building.shortName);
         const container = this.add.container(x, y);
-        // The sprite is drawn with its anchor at the container origin, so these bounds describe
-        // exactly where the visible building sits and where its base meets the lot.
-        const groundY = (1 - asset.anchor.y) * asset.height; // base line, on top of the lot
+        // The sprite is drawn with its anchor at the container origin. groundY is the visible
+        // base line (compensating for the sprite's transparent bottom padding) where the lot,
+        // status text, and selection highlight all sit so the building looks planted.
+        const groundY = this.baseLineY(asset);
         const spriteTop = -asset.anchor.y * asset.height;
         const hitWidth = asset.width;
         const hitHeight = asset.height;
@@ -1055,6 +1062,12 @@ export function createVillageScene(
         x: this.scale.width / 2 + x,
         y: this.scale.height / 2 + y,
       };
+    }
+
+    // Container-space y of a building's visible base (where it meets its lot), compensating for
+    // the transparent padding under each sprite.
+    private baseLineY(asset: BuildingAssetConfig) {
+      return SPRITE_BASE_OFFSET * asset.height;
     }
 
     // Grid cell -> world px. Fractional col is allowed so rows can be staggered.
