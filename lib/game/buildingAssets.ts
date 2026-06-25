@@ -23,29 +23,30 @@ export interface BuildingAssetConfig {
   key: string;
   path: string;
   spriteEnabled: boolean;
+  /**
+   * Logical lot on the isometric village grid. The scene converts (gridCol, gridRow) into
+   * world/screen coordinates, so buildings are placed on intentional grid lots rather than
+   * scattered pixel positions. Roads are drawn along the grid lines between these lots.
+   */
+  gridCol: number;
+  gridRow: number;
   /** Displayed sprite size in world px. The full sprite is also the clickable footprint. */
   width: number;
   height: number;
   /**
-   * Origin used when drawing the sprite. y is kept near the bottom so the base of the
-   * building lands on the ground (no floating). The scene derives the ground line,
-   * shadow, hit area, and selection highlight from width/height/anchor.
+   * Sprite origin. y is kept near the bottom so the base of the building lands on its
+   * ground lot (no floating). The scene derives the ground line, lot pad, hit area, and
+   * selection highlight from width/height/anchor.
    */
   anchor: {
     x: number;
     y: number;
   };
+  /** Isometric ground pad/lot drawn under the building base (replaces drop shadows). */
+  lotWidth: number;
+  lotHeight: number;
   labelOffsetY: number;
   statusOffsetY: number;
-  /**
-   * Ground-contact shadow. Sits tightly under the building base (offset is derived from
-   * the anchor in the scene), so it reads as contact rather than a floating blob.
-   */
-  shadow: {
-    width: number;
-    height: number;
-    alpha: number;
-  };
   fallbackStyle: BuildingFallbackStyle;
 }
 
@@ -54,12 +55,15 @@ export const buildingAssetRegistry: Record<string, BuildingAssetConfig> = {
     key: "building-hq",
     path: "/assets/buildings/hq.png",
     spriteEnabled: true,
+    gridCol: -1,
+    gridRow: -1,
     width: 188,
-    height: 188,
-    anchor: { x: 0.5, y: 0.84 },
-    labelOffsetY: -174,
-    statusOffsetY: 46,
-    shadow: { width: 118, height: 28, alpha: 0.3 },
+    height: 176,
+    anchor: { x: 0.5, y: 0.82 },
+    lotWidth: 226,
+    lotHeight: 116,
+    labelOffsetY: -160,
+    statusOffsetY: 42,
     fallbackStyle: {
       silhouette: "keep",
       wallColor: 0x75523a,
@@ -74,12 +78,15 @@ export const buildingAssetRegistry: Record<string, BuildingAssetConfig> = {
     key: "building-treasury",
     path: "/assets/buildings/treasury.png",
     spriteEnabled: true,
-    width: 152,
-    height: 226,
-    anchor: { x: 0.5, y: 0.87 },
-    labelOffsetY: -214,
-    statusOffsetY: 44,
-    shadow: { width: 96, height: 23, alpha: 0.28 },
+    gridCol: -2,
+    gridRow: 0,
+    width: 150,
+    height: 218,
+    anchor: { x: 0.5, y: 0.86 },
+    lotWidth: 182,
+    lotHeight: 92,
+    labelOffsetY: -205,
+    statusOffsetY: 40,
     fallbackStyle: {
       silhouette: "treasury",
       wallColor: 0x80552b,
@@ -94,12 +101,15 @@ export const buildingAssetRegistry: Record<string, BuildingAssetConfig> = {
     key: "building-content-studio",
     path: "/assets/buildings/content-studio.png",
     spriteEnabled: true,
-    width: 150,
-    height: 222,
-    anchor: { x: 0.5, y: 0.87 },
-    labelOffsetY: -210,
-    statusOffsetY: 43,
-    shadow: { width: 94, height: 22, alpha: 0.28 },
+    gridCol: 0,
+    gridRow: -2,
+    width: 148,
+    height: 214,
+    anchor: { x: 0.5, y: 0.86 },
+    lotWidth: 180,
+    lotHeight: 90,
+    labelOffsetY: -202,
+    statusOffsetY: 40,
     fallbackStyle: {
       silhouette: "studio",
       wallColor: 0x4d5e61,
@@ -114,12 +124,15 @@ export const buildingAssetRegistry: Record<string, BuildingAssetConfig> = {
     key: "building-product-workshop",
     path: "/assets/buildings/product-workshop.png",
     spriteEnabled: true,
-    width: 152,
-    height: 226,
-    anchor: { x: 0.5, y: 0.87 },
-    labelOffsetY: -214,
-    statusOffsetY: 44,
-    shadow: { width: 96, height: 23, alpha: 0.28 },
+    gridCol: 1,
+    gridRow: 0,
+    width: 150,
+    height: 218,
+    anchor: { x: 0.5, y: 0.86 },
+    lotWidth: 182,
+    lotHeight: 92,
+    labelOffsetY: -205,
+    statusOffsetY: 40,
     fallbackStyle: {
       silhouette: "workshop",
       wallColor: 0x78533a,
@@ -134,12 +147,15 @@ export const buildingAssetRegistry: Record<string, BuildingAssetConfig> = {
     key: "building-freelance-guild",
     path: "/assets/buildings/freelance-guild.png",
     spriteEnabled: true,
-    width: 156,
-    height: 232,
-    anchor: { x: 0.5, y: 0.87 },
-    labelOffsetY: -220,
-    statusOffsetY: 45,
-    shadow: { width: 98, height: 23, alpha: 0.28 },
+    gridCol: -1,
+    gridRow: 2,
+    width: 152,
+    height: 222,
+    anchor: { x: 0.5, y: 0.86 },
+    lotWidth: 184,
+    lotHeight: 92,
+    labelOffsetY: -209,
+    statusOffsetY: 41,
     fallbackStyle: {
       silhouette: "guild",
       wallColor: 0x714522,
@@ -154,12 +170,15 @@ export const buildingAssetRegistry: Record<string, BuildingAssetConfig> = {
     key: "building-engineering-workshop",
     path: "/assets/buildings/engineering-workshop.png",
     spriteEnabled: true,
-    width: 158,
-    height: 236,
-    anchor: { x: 0.5, y: 0.87 },
-    labelOffsetY: -224,
-    statusOffsetY: 46,
-    shadow: { width: 100, height: 24, alpha: 0.29 },
+    gridCol: 2,
+    gridRow: -1,
+    width: 154,
+    height: 226,
+    anchor: { x: 0.5, y: 0.86 },
+    lotWidth: 186,
+    lotHeight: 94,
+    labelOffsetY: -212,
+    statusOffsetY: 42,
     fallbackStyle: {
       silhouette: "engineering",
       wallColor: 0x5b5047,
@@ -174,12 +193,15 @@ export const buildingAssetRegistry: Record<string, BuildingAssetConfig> = {
     key: "building-approval-court",
     path: "/assets/buildings/approval-court.png",
     spriteEnabled: true,
-    width: 168,
-    height: 250,
-    anchor: { x: 0.5, y: 0.87 },
-    labelOffsetY: -236,
-    statusOffsetY: 48,
-    shadow: { width: 106, height: 25, alpha: 0.29 },
+    gridCol: 0,
+    gridRow: 1,
+    width: 164,
+    height: 240,
+    anchor: { x: 0.5, y: 0.86 },
+    lotWidth: 198,
+    lotHeight: 100,
+    labelOffsetY: -224,
+    statusOffsetY: 44,
     fallbackStyle: {
       silhouette: "court",
       wallColor: 0x67604d,
@@ -194,12 +216,15 @@ export const buildingAssetRegistry: Record<string, BuildingAssetConfig> = {
     key: "building-research-library",
     path: "/assets/buildings/research-library.png",
     spriteEnabled: true,
-    width: 152,
-    height: 226,
-    anchor: { x: 0.5, y: 0.87 },
-    labelOffsetY: -214,
-    statusOffsetY: 44,
-    shadow: { width: 96, height: 23, alpha: 0.28 },
+    gridCol: 0,
+    gridRow: 2,
+    width: 150,
+    height: 218,
+    anchor: { x: 0.5, y: 0.86 },
+    lotWidth: 182,
+    lotHeight: 92,
+    labelOffsetY: -205,
+    statusOffsetY: 40,
     fallbackStyle: {
       silhouette: "library",
       wallColor: 0x62544f,
@@ -214,12 +239,15 @@ export const buildingAssetRegistry: Record<string, BuildingAssetConfig> = {
     key: "building-atlas-tower",
     path: "/assets/buildings/atlas-tower.png",
     spriteEnabled: true,
-    width: 160,
-    height: 264,
-    anchor: { x: 0.5, y: 0.88 },
-    labelOffsetY: -250,
-    statusOffsetY: 47,
-    shadow: { width: 100, height: 24, alpha: 0.3 },
+    gridCol: 2,
+    gridRow: 0,
+    width: 156,
+    height: 250,
+    anchor: { x: 0.5, y: 0.87 },
+    lotWidth: 188,
+    lotHeight: 94,
+    labelOffsetY: -235,
+    statusOffsetY: 42,
     fallbackStyle: {
       silhouette: "tower",
       wallColor: 0x435d61,
