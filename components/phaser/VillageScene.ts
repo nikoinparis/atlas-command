@@ -10,14 +10,15 @@ import {
 
 const SHOW_BUILDING_CLICK_ZONES = false;
 
-// Slight zoom so the village composition feels fuller without cropping buildings.
-const VILLAGE_ZOOM = 1.12;
+// Slight zoom so the village composition feels fuller without cropping the larger buildings
+// or pushing their labels under the top HUD.
+const VILLAGE_ZOOM = 1.05;
 // Extra background drawn beyond the viewport so zoom + edge-pan never expose empty canvas.
-const BACKGROUND_OVERSCAN = 96;
+const BACKGROUND_OVERSCAN = 110;
 // Edge-pan tuning: how close (px) the cursor must get to a screen edge before the camera drifts.
 const EDGE_PAN_THRESHOLD = 52;
 // Largest distance (px) the camera can drift from its resting position in any direction.
-const EDGE_PAN_MAX_DISTANCE = 38;
+const EDGE_PAN_MAX_DISTANCE = 34;
 // How quickly the camera eases toward its target each frame (0-1 per ~16ms); kept low for a gentle drift.
 const EDGE_PAN_EASE = 0.045;
 
@@ -172,6 +173,7 @@ export function createVillageScene(
       this.drawBackground();
       this.drawTiles();
       this.drawPaths();
+      this.drawClearings();
       this.drawScenery();
       this.drawBuildings();
       this.drawAgents();
@@ -241,58 +243,115 @@ export function createVillageScene(
 
     private drawPaths() {
       const graphics = this.add.graphics();
-      const pathPoints = [
-        this.toScreen(-330, 170),
-        this.toScreen(-180, 86),
-        this.toScreen(0, -6),
-        this.toScreen(178, -8),
-        this.toScreen(320, 88),
-      ];
-      const branchA = [this.toScreen(0, -6), this.toScreen(-18, -124)];
-      const branchB = [this.toScreen(0, -6), this.toScreen(18, 100), this.toScreen(162, 220)];
-      const branchC = [this.toScreen(-180, 86), this.toScreen(-150, 220)];
-      const branchD = [this.toScreen(178, -8), this.toScreen(248, -82), this.toScreen(330, -116)];
-      const branchE = [this.toScreen(-180, 86), this.toScreen(-272, 34), this.toScreen(-356, -34)];
+      const toScreenPath = (points: number[][]) => points.map(([x, y]) => this.toScreen(x, y));
 
-      // Short stub paths connecting each building's base back to the nearest road so
-      // every building reads as "on the path network" rather than dropped at random.
-      const connectors = [
-        [this.toScreen(-40, -126), this.toScreen(-12, -116)], // HQ -> branchA
-        [this.toScreen(78, 18), this.toScreen(24, -4)], // Court -> main road
-        [this.toScreen(-244, -8), this.toScreen(-260, 30)], // Treasury -> branchE
-        [this.toScreen(238, -38), this.toScreen(206, 6)], // Studio -> main road
-        [this.toScreen(338, 86), this.toScreen(312, 88)], // Engineering -> main road end
-        [this.toScreen(-314, 134), this.toScreen(-296, 166)], // Guild -> main road start
-        [this.toScreen(-188, 228), this.toScreen(-152, 222)], // Library -> branchC
-        [this.toScreen(224, 224), this.toScreen(170, 222)], // Atlas Tower -> branchB
-        [this.toScreen(-62, 124), this.toScreen(8, 104)], // Workshop -> branchB
-      ];
+      // Two main diagonal roads crossing at the village center form a clean isometric
+      // crossroads (NW<->SE and NE<->SW), giving the town an obvious direction.
+      const roadNwSe = toScreenPath([
+        [-300, -110],
+        [-120, -40],
+        [0, 0],
+        [150, 55],
+        [300, 135],
+      ]);
+      const roadNeSw = toScreenPath([
+        [300, -110],
+        [120, -40],
+        [0, 0],
+        [-150, 55],
+        [-300, 135],
+      ]);
 
-      this.strokePath(graphics, pathPoints, 48, 0x6d5934, 0.16, 9);
-      this.strokePath(graphics, pathPoints, 42, 0xefe0ad, 0.82, 9);
-      this.strokePath(graphics, pathPoints, 28, 0xcaa976, 0.42, 9);
-      [branchA, branchB, branchC, branchD, branchE].forEach((branch) => {
-        this.strokePath(graphics, branch, 34, 0x6d5934, 0.13, 7);
-        this.strokePath(graphics, branch, 30, 0xefe0ad, 0.72, 7);
-        this.strokePath(graphics, branch, 19, 0xcaa976, 0.38, 7);
+      // Spurs that branch off the crossroads to reach the buildings that sit away from the
+      // two main roads (HQ to the north, Library to the south, Atlas Tower on its own arm).
+      const spurHq = toScreenPath([
+        [0, 0],
+        [0, -62],
+      ]);
+      const spurLibrary = toScreenPath([
+        [0, 0],
+        [-45, 85],
+        [-138, 162],
+      ]);
+      const spurTower = toScreenPath([
+        [150, 55],
+        [150, 128],
+        [140, 166],
+      ]);
+
+      // Tiny entrance paths / doorsteps linking each remaining building to the nearest road.
+      const entrances = [
+        [[-200, -30], [-200, -64]], // Treasury -> NW road
+        [[200, -30], [200, -64]], // Studio -> NE road
+        [[-70, 50], [-70, 30]], // Court -> SW road
+        [[95, 64], [95, 46]], // Workshop -> SE road
+        [[-235, 78], [-235, 104]], // Guild -> SW road
+        [[250, 104], [250, 120]], // Engineering -> SE road
+      ].map(toScreenPath);
+
+      // Main roads: dark base, light worn surface, warm gravel core.
+      [roadNwSe, roadNeSw].forEach((road) => {
+        this.strokePath(graphics, road, 50, 0x6d5934, 0.16, 6);
+        this.strokePath(graphics, road, 44, 0xefe0ad, 0.82, 6);
+        this.strokePath(graphics, road, 28, 0xcaa976, 0.42, 6);
       });
-      connectors.forEach((connector) => {
-        this.strokePath(graphics, connector, 26, 0x6d5934, 0.12, 5);
-        this.strokePath(graphics, connector, 22, 0xefe0ad, 0.66, 5);
-        this.strokePath(graphics, connector, 13, 0xcaa976, 0.34, 5);
+      // Branch spurs are a touch narrower so the main roads stay dominant.
+      [spurHq, spurLibrary, spurTower].forEach((spur) => {
+        this.strokePath(graphics, spur, 34, 0x6d5934, 0.14, 5);
+        this.strokePath(graphics, spur, 30, 0xefe0ad, 0.74, 5);
+        this.strokePath(graphics, spur, 19, 0xcaa976, 0.4, 5);
+      });
+      entrances.forEach((entrance) => {
+        this.strokePath(graphics, entrance, 24, 0x6d5934, 0.12, 0);
+        this.strokePath(graphics, entrance, 20, 0xefe0ad, 0.68, 0);
+        this.strokePath(graphics, entrance, 12, 0xcaa976, 0.36, 0);
       });
 
-      graphics.fillStyle(0x866a43, 0.28);
+      // A small paved plaza where the two roads meet sells the "town center" read.
+      const center = this.toScreen(0, 0);
+      graphics.fillStyle(0x6d5934, 0.18);
+      graphics.fillEllipse(center.x, center.y, 96, 54);
+      graphics.fillStyle(0xefe0ad, 0.5);
+      graphics.fillEllipse(center.x, center.y, 78, 42);
+      graphics.fillStyle(0xcaa976, 0.32);
+      graphics.fillEllipse(center.x, center.y, 50, 26);
+
+      // Scattered cobbles for texture along the roads.
+      graphics.fillStyle(0x866a43, 0.26);
       [
-        this.toScreen(-260, 150),
-        this.toScreen(-84, 56),
-        this.toScreen(84, 42),
-        this.toScreen(226, 76),
-        this.toScreen(-64, -72),
-        this.toScreen(272, -92),
-        this.toScreen(-302, -12),
-      ].forEach((point, index) => {
-        graphics.fillCircle(point.x + index * 4, point.y + 8, 4 + (index % 2));
+        [-150, -54],
+        [-60, -18],
+        [70, 26],
+        [180, 78],
+        [60, -22],
+        [-80, 30],
+        [-190, 86],
+        [180, 96],
+      ].forEach(([x, y], index) => {
+        const point = this.toScreen(x, y);
+        graphics.fillCircle(point.x + index * 3, point.y + 6, 4 + (index % 2));
+      });
+      this.tileGroup?.add(graphics);
+    }
+
+    private drawClearings() {
+      // A worn grass/dirt clearing under every building so each one looks planted on a
+      // patch of ground rather than dropped onto the road.
+      const graphics = this.add.graphics();
+      options.buildings.forEach((building) => {
+        const asset = getBuildingAsset(building.id);
+        const { x, y } = this.toScreen(building.position.x, building.position.y);
+        const groundY = (1 - asset.anchor.y) * asset.height;
+        const clearingWidth = asset.width * 0.92;
+        const clearingHeight = asset.shadow.height * 2.5 + 14;
+        const baseY = y + groundY;
+
+        graphics.fillStyle(0x315c33, 0.5);
+        graphics.fillEllipse(x, baseY - 2, clearingWidth + 22, clearingHeight + 12);
+        graphics.fillStyle(0x6f5a3a, 0.42);
+        graphics.fillEllipse(x, baseY - 2, clearingWidth, clearingHeight);
+        graphics.fillStyle(0x836b44, 0.32);
+        graphics.fillEllipse(x, baseY - 4, clearingWidth * 0.7, clearingHeight * 0.66);
       });
       this.tileGroup?.add(graphics);
     }
@@ -321,24 +380,23 @@ export function createVillageScene(
     }
 
     private drawScenery() {
+      // Scenery is kept sparse and pushed to the village perimeter / road edges so it frames
+      // the larger buildings instead of cluttering or overlapping them.
       const treePositions = [
-        [-470, -190],
-        [-390, -118],
-        [-518, -66],
-        [-432, 34],
-        [-388, 252],
-        [-238, 278],
-        [280, -180],
-        [346, -246],
-        [410, -94],
-        [436, 100],
-        [492, 176],
-        [340, 262],
-        [48, 318],
-        [-36, -242],
-        [198, 312],
-        [-520, 176],
-        [500, -18],
+        [-345, -150],
+        [-365, -20],
+        [-350, 110],
+        [-300, 205],
+        [-150, -178],
+        [150, -178],
+        [330, -158],
+        [360, -28],
+        [350, 150],
+        [300, 215],
+        [-60, 238],
+        [60, 242],
+        [-260, -125],
+        [262, -122],
       ];
 
       treePositions.forEach(([x, y], index) => {
@@ -346,62 +404,56 @@ export function createVillageScene(
       });
 
       [
-        [-250, -24],
-        [-218, -42],
-        [242, 12],
-        [276, 30],
-        [-48, 196],
-        [-20, 210],
-        [80, -178],
-        [112, -190],
+        [-120, -62],
+        [120, -60],
+        [-32, 150],
+        [62, 150],
       ].forEach(([x, y]) => this.drawFence(x, y));
 
       [
-        [-314, 36],
-        [-104, 148],
-        [232, 170],
-        [358, -18],
-        [58, -18],
+        [-300, -60],
+        [300, -60],
+        [-262, 150],
+        [262, 150],
+        [0, 150],
       ].forEach(([x, y]) => this.drawRock(x, y));
 
       [
-        [-336, -52],
-        [-288, -88],
-        [-220, 166],
-        [-92, -158],
-        [128, -146],
-        [218, -72],
-        [294, 128],
-        [172, 188],
-        [18, 238],
-        [398, 28],
+        [-110, -30],
+        [110, -25],
+        [-30, 92],
+        [42, 120],
+        [-182, 122],
+        [182, 140],
+        [-300, 40],
+        [300, 40],
+        [-20, -142],
+        [210, -112],
       ].forEach(([x, y], index) => this.drawBush(x, y, index % 4));
 
       [
-        [-176, 138],
-        [-124, 104],
-        [54, 82],
-        [118, 54],
-        [244, 104],
-        [-34, -98],
-        [174, -126],
-        [-294, 74],
+        [-90, -8],
+        [72, 6],
+        [-26, 42],
+        [-205, 28],
+        [200, 18],
+        [-150, 150],
       ].forEach(([x, y], index) => this.drawFlowerClump(x, y, index));
 
       [
-        [-246, 100],
-        [238, -34],
-        [108, 166],
-        [-58, -112],
+        [45, -25],
+        [-50, 18],
+        [-150, -30],
+        [160, 22],
       ].forEach(([x, y]) => this.drawLanternPost(x, y));
 
       [
-        [-210, 136],
-        [286, 86],
-        [92, 208],
+        [152, 44],
+        [-300, 92],
+        [302, 102],
       ].forEach(([x, y], index) => this.drawCrateStack(x, y, index));
 
-      this.drawWell(-70, 18);
+      this.drawWell(12, 116);
     }
 
     private drawBuildings() {
@@ -413,32 +465,42 @@ export function createVillageScene(
         const accent = categoryAccent[building.category] ?? 0xffffff;
         const labelText = this.getBuildingLabel(building.id, building.shortName);
         const container = this.add.container(x, y);
+        // Derived footprint: the sprite is drawn with its anchor at the container origin, so
+        // these bounds describe exactly where the visible building sits.
+        const groundY = (1 - asset.anchor.y) * asset.height; // ground line, just under the base
+        const spriteTop = -asset.anchor.y * asset.height;
+        const hitWidth = asset.width;
+        const hitHeight = asset.height;
+        // Subtle ambient status glow tucked under the base (not a big floating oval).
         const glow = this.add.ellipse(
-          asset.shadow.offsetX,
-          asset.shadow.offsetY - 4,
-          asset.shadow.width + 42,
-          asset.shadow.height + 24,
+          0,
+          groundY - 4,
+          asset.shadow.width + 30,
+          asset.shadow.height + 12,
           palette.glow,
-          0.14,
+          0.12,
         );
+        // Ground-contact shadow sitting directly under the building footprint.
         const shadow = this.add.ellipse(
-          asset.shadow.offsetX,
-          asset.shadow.offsetY,
+          0,
+          groundY - 3,
           asset.shadow.width,
           asset.shadow.height,
           0x07100b,
           asset.shadow.alpha,
         );
+        // Selection highlight rectangle, sized to hug the full building body (slightly inset
+        // from the raw bounding box so it frames the building rather than empty padding).
         const base = this.add.rectangle(
           0,
-          asset.clickZone.offsetY + asset.clickZone.height / 2,
-          asset.clickZone.width,
-          asset.clickZone.height,
+          spriteTop + hitHeight / 2,
+          hitWidth * 0.88,
+          hitHeight * 0.9,
           0x000000,
           0,
         );
         const art = this.createBuildingArt(asset, accent);
-        const lantern = this.add.circle(asset.width / 2 - 18, asset.statusOffsetY - 42, 5, palette.glow, 0.94);
+        const lantern = this.add.circle(asset.width / 2 - 22, asset.statusOffsetY - 52, 5, palette.glow, 0.94);
         const labelBg = this.add.rectangle(
           0,
           asset.labelOffsetY,
@@ -484,14 +546,10 @@ export function createVillageScene(
           statusText,
         ]);
         container.setDepth(y);
-        container.setSize(asset.clickZone.width, asset.clickZone.height);
+        container.setSize(hitWidth, hitHeight);
+        // Hit area matches the full visible sprite so the whole building is clickable/hoverable.
         container.setInteractive(
-          new PhaserLib.Geom.Rectangle(
-            -asset.clickZone.width / 2,
-            asset.clickZone.offsetY,
-            asset.clickZone.width,
-            asset.clickZone.height,
-          ),
+          new PhaserLib.Geom.Rectangle(-hitWidth / 2, spriteTop, hitWidth, hitHeight),
           PhaserLib.Geom.Rectangle.Contains,
         );
         container.on("pointerover", () => {
